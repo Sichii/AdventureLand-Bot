@@ -8,12 +8,10 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         throw new Error("This enumerable contains no elements.");
     }
 
-    firstOrDefault(predicate: (item: T) => boolean) {
-        for (let item of this) {
-            if (predicate(item)) {
+    firstOrDefault(predicate?: (item: T) => boolean) {
+        for (let item of this)
+            if (predicate?.(item) ?? true)
                 return item;
-            }
-        }
 
         return null;
     }

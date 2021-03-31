@@ -2,7 +2,7 @@ import { Dictionary, List } from "../internal";
 
 export interface IEnumerable<T> extends Iterable<T> {
     first(): T;
-    firstOrDefault(predicate: (item: T) => boolean): T | null;
+    firstOrDefault(predicate?: (item: T) => boolean): T | null;
     all(predicate: (item: T) => boolean): boolean;
     any(predicate: (item: T) => boolean): boolean;
     contains(item: T): boolean;

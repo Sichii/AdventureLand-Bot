@@ -1,3 +1,4 @@
+import { CONSTANTS } from "../definitions/CONSTANTS";
 import { Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
@@ -11,7 +12,7 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.character.hp / this.character.max_hp;
     }
 
-    get mp_pct() {
+    get mpPct() {
         return this.character.mp / this.character.max_mp;
     }
 
@@ -58,7 +59,7 @@ export abstract class PingCompensatedScript extends KindBase {
     async loopAsync(func: () => Promise<any>, msMinDelay: number, delayStart?: boolean) {
         let wrapperFunc = async () => {
             try {
-                if(!this.isConnected)
+                if (!this.isConnected)
                     await PromiseExt.delay(10000);
                 else {
                     await func();
@@ -83,7 +84,7 @@ export abstract class PingCompensatedScript extends KindBase {
         await this.character.disconnect();
 
         let timeSinceLastConnect = Utility.msSince(this.lastConnect);
-        if(timeSinceLastConnect < 1000 * 60)
+        if (timeSinceLastConnect < 1000 * 60)
             await PromiseExt.delay(timeSinceLastConnect);
 
         await this.character.connect();
@@ -102,21 +103,35 @@ export abstract class PingCompensatedScript extends KindBase {
         return true;
     }
 
-    usePotionRegenAsync() {
+    async usePotionRegenAsync() {
         if (this.character.rip)
-            return PromiseExt.delay(1000);
+            return await PromiseExt.delay(1000);
 
-        if (this.mp_pct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp"))
-            return this.character.useMPPot(this.character.locateItem("mpot0"));
+        if (this.mpPct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp")) {
+            let potionToUse = SETTINGS.POTIONS
+                .where(potion => potion.startsWith("mpot"))
+                .select(potion => this.character.locateItem(potion))
+                .firstOrDefault();
 
-        if (this.mp_pct < SETTINGS.HP_POT_AT && this.character.canUse("use_hp"))
-            return this.character.useHPPot(this.character.locateItem("hpot0"));
+            if (potionToUse != null)
+                return await this.character.useMPPot(potionToUse);
+        }
 
-        if (this.hpPct < this.mp_pct && this.character.max_hp - this.character.hp > 50 && this.character.canUse("regen_hp"))
-            return this.character.regenHP();
+        if (this.hpPct < SETTINGS.HP_POT_AT && this.character.canUse("use_hp")) {
+            let potionToUse = SETTINGS.POTIONS
+                .where(potion => potion.startsWith("hpot"))
+                .select(potion => this.character.locateItem(potion))
+                .firstOrDefault();
+
+            if (potionToUse != null)
+                return await this.character.useHPPot(potionToUse);
+        }
+
+        if (this.hpPct < this.mpPct && this.character.max_hp - this.character.hp > 50 && this.character.canUse("regen_hp"))
+            return await this.character.regenHP();
 
         if (this.character.max_mp - this.character.mp > 100 && this.character.canUse("regen_mp"))
-            return this.character.regenMP();
+            return await this.character.regenMP();
 
         return Promise.resolve(false);
     }
@@ -136,28 +151,28 @@ export abstract class PingCompensatedScript extends KindBase {
     withinSkillRange(entity: Point | IPosition, skill: SkillName) {
         let skillInfo = Game.G.skills[skill];
 
-        if(skillInfo == null) {
+        if (skillInfo == null) {
             Logger.Error(`No such skill ${skill}`);
             return false;
         }
 
         let range = skillInfo.range;
-        if(range == null) {
+        if (range == null) {
             range = skillInfo.range_multiplier;
 
-            if(range)
+            if (range)
                 range *= this.character.range;
             else {
                 range = skillInfo.range_bonus;
 
-                if(range)
+                if (range)
                     range += this.character.range;
             }
         }
 
-        if(range == null)
+        if (range == null)
             return true;
-    
+
         return this.distance(entity) < range;
     }
 
@@ -240,7 +255,7 @@ export abstract class PingCompensatedScript extends KindBase {
 
         if (bestPoint != null)
             await this.character.move(bestPoint.x, bestPoint.y, true)
-                .catch(() => {});
+                .catch(() => { });
         else
             await this.character.smartMove(location, { getWithin: this.character.range });
 

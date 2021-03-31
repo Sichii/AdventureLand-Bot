@@ -75,7 +75,7 @@ export class PriestScript extends ScriptBase<Priest> {
             await this.weightedMoveToEntityAsync(target, this.character.range * 1.25);
         else if(target != null) {
             let smartMove = this.character.smartMove(target, { getWithin: this.character.range / 2 })
-            .catch(() => {});
+                .catch(() => {});
 
             await PromiseExt.setTimeoutAsync(smartMove, 5000);
         }
