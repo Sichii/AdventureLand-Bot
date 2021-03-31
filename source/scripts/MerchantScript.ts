@@ -61,10 +61,10 @@ export class MerchantScript extends ScriptBase<Merchant> {
                 //manage inventory?
             }
         } else if (this.shouldGoCraft()) {
-            await this.character.smartMove("craftsman", { getWithin: Constants.NPC_INTERACTION_DISTANCE });
+            await this.character.smartMove("craftsman", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
             await this.craftAllItemsAsync();
         } else if (this.shouldExchangeItems()) {
-            await this.character.smartMove("exchange", { getWithin: Constants.NPC_INTERACTION_DISTANCE });
+            await this.character.smartMove("exchange", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
             await this.exchangeItemsAsync();
         } else if (this.distance(SETTINGS.MERCHANT_STAND_LOCATION) > 10)
             await this.character.smartMove(SETTINGS.MERCHANT_STAND_LOCATION);
