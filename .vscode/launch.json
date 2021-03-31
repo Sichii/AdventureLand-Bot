@@ -6,13 +6,13 @@
     "trace": true,
     "configurations": [
         {
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Run bot",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "../run.bat",
+            "program": "${workspaceFolder}/build/app.js",
         }
     ]
 }
