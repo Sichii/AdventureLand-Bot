@@ -1,4 +1,4 @@
-import { Game, HiveMind, Logger, MerchantScript, Pathfinder, PriestScript, PromiseExt, RangerScript, WarriorScript } from "./internal";
+import { Game, HiveMind, Logger, MerchantScript, Pathfinder, PriestScript, RangerScript, WarriorScript } from "./internal";
 
 async function main() {
     try {

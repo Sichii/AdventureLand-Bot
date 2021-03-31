@@ -6,7 +6,7 @@ export class HiveMind extends Dictionary<string, PingCompensatedScript> {
     constructor() {
         super();
 
-        PromiseExt.loopAsync(() => this.managePartyAsync(), 5000);
+        PromiseExt.setIntervalAsync(() => this.managePartyAsync(), 5000);
     }
 
     get leader() {

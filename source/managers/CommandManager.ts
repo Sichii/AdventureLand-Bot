@@ -10,7 +10,13 @@ export class CommandManager {
 
     handleCommand(data: string) {
         Logger.Log(LogLevel.Info, chalk.green(`CODE COMMAND: ${JSON.stringify(data)}`));
-        eval(data);
+
+        try {
+            eval(data);
+        } catch (e) {
+            Logger.Error(`CODE COMMAND ERROR: 
+${data}`);
+        }
     }
 
     visitParty() {

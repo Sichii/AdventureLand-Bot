@@ -3,13 +3,13 @@ import { EnumerableBase, IEnumerable } from "../internal";
 export class OrderByEnumerableIterator<T> extends EnumerableBase<T> {
     source: IEnumerable<T>;
     iterator?: Iterator<T>;
-    value_selector: (item: T) => number;
+    valueSelector: (item: T) => number;
     index = 0;
     keys: number[] | undefined;
 
-    constructor(source: IEnumerable<T>, value_selector: (item: T) => number, desc = false) {
+    constructor(source: IEnumerable<T>, valueSelector: (item: T) => number, desc = false) {
         super();
-        this.value_selector = value_selector;
+        this.valueSelector = valueSelector;
         this.source = source;
     }
 
@@ -103,14 +103,13 @@ export class OrderByEnumerableIterator<T> extends EnumerableBase<T> {
 
         for (let index in items) {
             let item = items[index];
-            keys[index] = this.value_selector(item);
+            keys[index] = this.valueSelector(item);
             map.push(+index);
         }
 
         this.quickSort(map, 0, map.length - 1, keys);
 
-        for(let key of map) {
+        for(let key of map)
             yield items[key];
-        }
     }
 }

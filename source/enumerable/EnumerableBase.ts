@@ -1,4 +1,3 @@
-import { ForegroundColor } from "chalk";
 import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, OrderByEnumerableIterator } from "../internal";
 
 export abstract class EnumerableBase<T> implements IEnumerable<T> {

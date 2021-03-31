@@ -7,8 +7,7 @@
     "allowJs": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "lib": [ "ESNext", "DOM" ],
-    "watch": true
+    "lib": [ "ESNext", "DOM" ]
   },
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Recommended",

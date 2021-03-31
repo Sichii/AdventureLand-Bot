@@ -1,4 +1,4 @@
-import { SETTINGS, Game, HiveMind, PromiseExt, ScriptBase, ServerIdentifier, ServerRegion, Utility, Warrior, Pathfinder } from "../internal";
+import { SETTINGS, Game, HiveMind, PromiseExt, ScriptBase, ServerIdentifier, ServerRegion, Location, Warrior, Pathfinder } from "../internal";
 
 export class WarriorScript extends ScriptBase<Warrior> {
 	constructor(character: Warrior, hiveMind: HiveMind) {
@@ -93,13 +93,14 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			if(distance < this.character.range * 0.75)
 				return;
 			else {
-				let entityLocation = Utility.getLocation(target);
+				let entityLocation = Location.fromIPosition(target);
 
 				if(Pathfinder.canWalkPath(this.location, entityLocation)) {
 					let walkTo = entityLocation.point.offsetByAngle(target.angle, this.character.range / 2);
 					let lerped = this.point.lerp(walkTo, this.character.speed, this.character.range);
 
-					await this.character.move(lerped.x, lerped.y, true);
+					await this.character.move(lerped.x, lerped.y, true)
+						.catch(() => {});
 				} else {
 					await this.character.smartMove(entityLocation, { getWithin: this.character.range });
 				}

@@ -16,26 +16,26 @@ export * from "./collections/List";
 export * from "./collections/Dictionary";
 
 export * from "./definitions/CONSTANTS";
-export * from "./definitions/SETTINGS";
 export * from "./definitions/Enums";
 
 export * from "./helpers/Enum";
 export * from "./helpers/Logger";
 export * from "./helpers/PromiseExt";
 
-export * from "./definitions/Utility";
+export * from "./objects/Deferred";
+export * from "./objects/KindBase";
+export * from "./objects/Point";
+export * from "./objects/Location";
 
-export * from "./interfaces/IKeyedSet";
+export * from "./definitions/Utility";
 
 export * from "./managers/HiveMind";
 export * from "./managers/MetricManager";
 export * from "./managers/CommandManager";
 
-export * from "./objects/Deferred";
-export * from "./objects/KindBase";
-export * from "./objects/Point";
-export * from "./objects/Location";
 export * from "./objects/WeightedCircle";
+
+export * from "./definitions/SETTINGS";
 
 export * from "./scripts/PingCompensatedScript";
 export * from "./scripts/ScriptBase";

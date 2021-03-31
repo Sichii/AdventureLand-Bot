@@ -1,4 +1,4 @@
-import { List, MonsterName, ItemName } from "../internal";
+import { List, MonsterName, ItemName, Location, Point } from "../internal";
 
 export class SETTINGS {
     //#region Attack
@@ -29,6 +29,7 @@ export class SETTINGS {
 
     static LEADER_NAME = "makiz";
     static MERCHANT_NAME = "sichi";
+    static MERCHANT_STAND_LOCATION = new Location(new Point(-130, -100), "main");
     //#endregion
 
     //#region Thresholds

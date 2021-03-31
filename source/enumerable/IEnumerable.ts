@@ -1,5 +1,4 @@
-import { Dictionary } from "../collections/Dictionary";
-import { List } from "../internal";
+import { Dictionary, List } from "../internal";
 
 export interface IEnumerable<T> extends Iterable<T> {
     first(): T;

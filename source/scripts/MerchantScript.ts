@@ -1,10 +1,7 @@
-import { BankPackType } from "alclient";
-import { Dictionary } from "../collections/Dictionary";
-import { HiveMind, Merchant, ScriptBase, Location, PromiseExt, Point, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, Logger, ServerIdentifier, ServerRegion } from "../internal";
+import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ServerIdentifier, ServerRegion, BankPackType, Dictionary } from "../internal";
 
 export class MerchantScript extends ScriptBase<Merchant> {
     wasMoving: boolean;
-    standLocation: Location;
     visitParty: boolean;
 
     constructor(entity: Merchant, hiveMind: HiveMind) {
@@ -12,7 +9,6 @@ export class MerchantScript extends ScriptBase<Merchant> {
         this.Kind.push("MerchantScript");
 
         this.wasMoving = true;
-        this.standLocation = new Location(new Point(-130, -100), "main");
         this.visitParty = false;
     }
 
@@ -34,7 +30,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
     }
 
     async mainAsync() {
-        if(this.character.rip) {
+        if (this.character.rip) {
             this.character.respawn();
             await PromiseExt.delay(2500);
             return;
@@ -46,13 +42,13 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (leader == null)
                 return;
 
-            await this.character.smartMove(leader.character, { getWithin: 150 });
+            await this.character.smartMove(leader.character, { getWithin: 200 });
 
-            if(this.distance(leader.character) < 200) {
+            if (this.distance(leader.character) < 250) {
                 await this.tradeWithPartyAsync();
                 this.visitParty = false;
             }
-        } else if(false) {
+        } else if (false) {
             //TODO: add dismantle logic
         } else if (this.shouldGoToBank()) {
             await this.character.smartMove("bank");
@@ -65,13 +61,13 @@ export class MerchantScript extends ScriptBase<Merchant> {
                 //manage inventory?
             }
         } else if (this.shouldGoCraft()) {
-            await this.character.smartMove("craftsman", { getWithin: 100 });
+            await this.character.smartMove("craftsman", { getWithin: Constants.NPC_INTERACTION_DISTANCE });
             await this.craftAllItemsAsync();
         } else if (this.shouldExchangeItems()) {
-            await this.character.smartMove("exchange", { getWithin: 100 });
+            await this.character.smartMove("exchange", { getWithin: Constants.NPC_INTERACTION_DISTANCE });
             await this.exchangeItemsAsync();
-        } else if (this.distance(this.standLocation) > 10)
-            await this.character.smartMove(this.standLocation);
+        } else if (this.distance(SETTINGS.MERCHANT_STAND_LOCATION) > 10)
+            await this.character.smartMove(SETTINGS.MERCHANT_STAND_LOCATION);
         else {
             await this.buyPotionsAsync();
             await this.buyScrollsAsync();
@@ -112,8 +108,8 @@ export class MerchantScript extends ScriptBase<Merchant> {
                 )
             ) {
                 await this.character.mluck(name)
-                    .catch(() => {});
-                await PromiseExt.delay(100);
+                    .catch(() => { });
+                await PromiseExt.delay(150);
             }
         }
     }
@@ -145,27 +141,27 @@ export class MerchantScript extends ScriptBase<Merchant> {
     //#region Dismantle
     shouldDismantle(item: ItemInfo, items: ItemInfo[]) {
         //only dismantle compoundable items that are level 1, and are required for crafting
-        if(item == null || item.level == null || item.level !== 1 || !this.requiredForCrafting(item.name))
+        if (item == null || item.level == null || item.level !== 1 || !this.requiredForCrafting(item.name))
             return false;
 
         let gItem = Game.G.items[item.name];
 
-        if(!gItem.compound)
+        if (!gItem.compound)
             return false;
 
         //only dismantle if we have all other requirements
-        for(let craftName of SETTINGS.ITEMS_TO_CRAFT) {
+        for (let craftName of SETTINGS.ITEMS_TO_CRAFT) {
             let recipe = Game.G.craft[craftName];
 
-            if(recipe == null)
+            if (recipe == null)
                 continue;
 
-            for(let [quantity, name, level] of recipe.items) {
-                if(name === item.name)
+            for (let [quantity, name, level] of recipe.items) {
+                if (name === item.name)
                     continue;
 
                 let currentItems = this.character.locateItems(name, items, { level: 1 });
-                if(currentItems.length * 3 < quantity)
+                if (currentItems.length * 3 < quantity)
                     return false;
             }
         }
@@ -229,31 +225,31 @@ export class MerchantScript extends ScriptBase<Merchant> {
                 return true;
 
             if (requiredForCrafting && item.level > 0)
-                    return true;
+                return true;
         }
 
         //if this item is required for crafting
-        if(requiredForCrafting) {
+        if (requiredForCrafting) {
             let quantityRequired = 0;
             let stackable = Game.G.items[item.name].s;
 
             //check how much is required for whatever craft it's needed for
-            for(let itemName of SETTINGS.ITEMS_TO_CRAFT) {
+            for (let itemName of SETTINGS.ITEMS_TO_CRAFT) {
                 let recipe = Game.G.craft[itemName];
 
-                if(recipe != null)
-                    for(let [quantity, name, level] of recipe?.items)
-                        if(name === item.name && quantity > quantityRequired && level === item.level)
+                if (recipe != null)
+                    for (let [quantity, name, level] of recipe?.items)
+                        if (name === item.name && quantity > quantityRequired && level === item.level)
                             quantityRequired = quantity;
             }
 
             //check how many we have of this item
-            if(quantityRequired > 0) {
+            if (quantityRequired > 0) {
                 let currentSlotsUsed = this.character.locateItems(item.name, undefined, { level: item.level }).length;
 
                 //if we have over double the crafting requirements, we should bank it for now to save inv space
                 //we only really care about slots used, if something is stackable then it probably shouldnt be deposited
-                if(currentSlotsUsed > quantityRequired * 2)
+                if (currentSlotsUsed > quantityRequired * 2)
                     return true;
             }
         }
@@ -299,21 +295,21 @@ export class MerchantScript extends ScriptBase<Merchant> {
     }
 
     async withdrawlItems() {
-        for(let key in this.character.bank) {
-            if(key === "gold")
+        for (let key in this.character.bank) {
+            if (key === "gold")
                 continue;
 
             let bank = this.character.bank[<BankPackType>key];
 
-            if(bank == null || typeof(bank) == "number")
+            if (bank == null || typeof (bank) == "number")
                 continue;
 
-            for(let index in bank) {
+            for (let index in bank) {
                 let item = bank[index];
-                if(item == null)
+                if (item == null)
                     continue;
 
-                if(this.shouldWithdrawlItem(item))
+                if (this.shouldWithdrawlItem(item))
                     await this.character.withdrawItem(<Exclude<BankPackType, "gold">>key, +index);
             }
         }
@@ -334,12 +330,12 @@ export class MerchantScript extends ScriptBase<Merchant> {
             }
 
             //check how many we have of this item
-            if(quantityRequired > 0) {
+            if (quantityRequired > 0) {
                 let currentItems = this.character.locateItems(item.name, undefined, { level: item.level });
                 let currentQuantity = new List(currentItems)
                     .sumBy(item => this.character.items[item].q ?? 1);
                 //if we have less than double the crafting requirements, we should withdrawl it
-                if(currentQuantity < quantityRequired * 2)
+                if (currentQuantity < quantityRequired * 2)
                     return true;
             }
         }
@@ -390,25 +386,25 @@ export class MerchantScript extends ScriptBase<Merchant> {
     autoCraft(itemName: ItemName) {
         let craftInfo = Game.G.craft[itemName];
 
-        if(craftInfo == null)
+        if (craftInfo == null)
             return false;
 
         let itemSlots = [];
         let craftSlot = 0;
-        for(let [quantity, name, level] of craftInfo.items) {
-            for(let index in this.character.items) {
+        for (let [quantity, name, level] of craftInfo.items) {
+            for (let index in this.character.items) {
                 let item = this.character.items[index];
 
                 //only care about items with the right name
-                if(item == null || item.name !== name)
+                if (item == null || item.name !== name)
                     continue;
 
                 //only care about items that match level requirement
-                if((level || 0) > (item.level || 0))
+                if ((level || 0) > (item.level || 0))
                     continue;
 
                 //only use stacks with enough quantity to fulfil the need
-                if((quantity || 1) > (item.q || 1))
+                if ((quantity || 1) > (item.q || 1))
                     continue;
 
                 //push the craft slot/index tuple
@@ -422,33 +418,33 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
     canCraft(itemName: ItemName) {
         let info = Game.G.craft[itemName];
-        let req_dic = new Dictionary<ItemName, {q: number, c: number}>();
+        let req_dic = new Dictionary<ItemName, { q: number, c: number }>();
 
-        if(info == null)
+        if (info == null)
             return false;
 
-        for(let [quantity, name] of info.items) {
-            if(name != null && quantity != null)
-                req_dic.addOrSet(name, {q: quantity, c: 0});
+        for (let [quantity, name] of info.items) {
+            if (name != null && quantity != null)
+                req_dic.addOrSet(name, { q: quantity, c: 0 });
         }
 
-        for(let [key, value] of req_dic) {
-            for(let item of this.character.items) {
-                if(item == null)
+        for (let [key, value] of req_dic) {
+            for (let item of this.character.items) {
+                if (item == null)
                     continue
 
-                if(item.name === key && (item.level == null || item.level == 0))
+                if (item.name === key && (item.level == null || item.level == 0))
                     value.c += item.q ?? 1;
             }
 
-            if(value.c < value.q)
+            if (value.c < value.q)
                 return false;
         }
 
         return true;
     }
     //#endregion
-    
+
     //#region Exchange
     shouldExchangeItems() {
         if (this.character.isFull())
@@ -459,7 +455,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
     async exchangeItemsAsync() {
         while (this.shouldExchangeItems()) {
-            if(this.character.q.exchange) {
+            if (this.character.q.exchange) {
                 await PromiseExt.delay(100);
                 continue;
             }
@@ -477,7 +473,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
         }
     }
     //#endregion
-    
+
     //#region Buy/Sell
     async buyPotionsAsync() {
         for (let potion of SETTINGS.POTIONS) {
@@ -554,13 +550,13 @@ export class MerchantScript extends ScriptBase<Merchant> {
         }
     }
     //#endregion
-    
+
     //#region Upgrade/Compound
     async upgradeItemsAsync() {
         let upgrading = true;
 
         while (upgrading) {
-            if(this.character.q.upgrade) {
+            if (this.character.q.upgrade) {
                 await PromiseExt.delay(100);
                 continue;
             }
@@ -588,6 +584,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     upgrading = true;
                     await this.character.massProduction();
                     await this.character.upgrade(+index, scrollSlot);
+                    break;
                 }
             }
         }
@@ -620,6 +617,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     upgrading = true;
                     await this.character.massProduction();
                     await this.character.upgrade(+index, scrollSlot);
+                    break;
                 }
             }
         }
@@ -629,7 +627,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
         let compounding = true;
 
         while (compounding) {
-            if(this.character.q.compound) {
+            if (this.character.q.compound) {
                 await PromiseExt.delay(100);
                 continue;
             }
@@ -660,6 +658,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     compounding = true;
                     await this.character.massProduction();
                     await this.character.compound(items[0], items[1], items[2], scrollSlot);
+                    break;
                 }
             }
         }

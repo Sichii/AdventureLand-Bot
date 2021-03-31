@@ -5,7 +5,11 @@ export class PromiseExt {
         return new Promise<void>(resolve => setTimeout(resolve, timeoutMs));
     }
 
-    static async loopAsync(func: () => Promise<any>, msDelay: number, delayedStart = false) {
+    static setTimeoutAsync<T>(promise: Promise<T>, msTimeout: number) {
+        return Promise.any<T | void>([promise, this.delay(msTimeout)]);
+    }
+
+    static async setIntervalAsync(func: () => Promise<any>, msDelay: number, delayedStart = false) {
         let loopFunc = async () => {
             try {
                 await func();
@@ -39,10 +43,6 @@ export class PromiseExt {
         }
 
         return pollFunc();
-    }
-
-    static setTimeoutAsync<T>(promise: Promise<T>, msTimeout: number) {
-        return Promise.any<T | void>([promise, this.delay(msTimeout)]);
     }
 
     static async whenAll<T>(...promises: Promise<T>[]) {

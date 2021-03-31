@@ -1,5 +1,4 @@
-import { EvalData } from "alclient";
-import { Dictionary, Player, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager } from "../internal";
+import { Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
@@ -183,13 +182,13 @@ export abstract class PingCompensatedScript extends KindBase {
                 if (entity.isAttackingPartyMember(this.character))
                     return entity;
 
+                let entityLocation = Location.fromIPosition(entity);
+
                 if (current == null) {
-                    let entityLocation = Utility.getLocation(entity);
                     current = { target: entity, location: entityLocation, canPath: Pathfinder.canWalkPath(this.location, entityLocation) };
                     continue;
                 }
 
-                let entityLocation = Utility.getLocation(entity);
                 let canPath = Pathfinder.canWalkPath(this.location, entityLocation);
 
                 if (canPath) {
@@ -222,10 +221,10 @@ export abstract class PingCompensatedScript extends KindBase {
         }
     }
 
-    async weightedMoveToEntityAsync(entity: Entity, max_distance: number) {
-        let location = Utility.getLocation(entity);
+    async weightedMoveToEntityAsync(entity: Entity, maxDistance: number) {
+        let location = Location.fromIPosition(entity);
 
-        let circle = new WeightedCircle(location, max_distance, max_distance / 10);
+        let circle = new WeightedCircle(location, maxDistance, maxDistance / 10);
         let entities = new Dictionary(this.character.entities)
             .values
             .where(xEntity => xEntity != null && xEntity.id !== entity.id)
@@ -240,7 +239,8 @@ export abstract class PingCompensatedScript extends KindBase {
         let bestPoint = circle.orderBy(entry => entry.weight).firstOrDefault(entry => Pathfinder.canWalkPath(entry.location, this.location))?.location;
 
         if (bestPoint != null)
-            await this.character.move(bestPoint.x, bestPoint.y, true);
+            await this.character.move(bestPoint.x, bestPoint.y, true)
+                .catch(() => {});
         else
             await this.character.smartMove(location, { getWithin: this.character.range });
 

@@ -1,4 +1,4 @@
-import { SETTINGS, Deferred, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Utility } from "../internal";
+import { SETTINGS, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location } from "../internal";
 
 export class RangerScript extends ScriptBase<Ranger> {
     constructor(character: Ranger, hiveMind: HiveMind) {
@@ -78,8 +78,8 @@ export class RangerScript extends ScriptBase<Ranger> {
             await PromiseExt.pollWithTimeoutAsync(async () => pollFunc(), 1000);
         }
 
-        if(target != null && Pathfinder.canWalkPath(this.location, Utility.getLocation(target)))
-            await this.weightedMoveToEntityAsync(target, (this.character.range + this.character.xrange) * 1.25);
+        if(target != null && Pathfinder.canWalkPath(this.location, Location.fromIPosition(target)))
+            await this.weightedMoveToEntityAsync(target, this.character.range * 1.25);
         else if(target != null) {
             let smartMove = this.character.smartMove(target, { getWithin: this.character.range / 2 })
                 .catch(() => {});

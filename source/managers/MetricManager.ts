@@ -1,4 +1,4 @@
-import { PingCompensatedScript, Utility, CONSTANTS, PromiseExt } from "../internal";
+import { PingCompensatedScript, Utility, CONSTANTS } from "../internal";
 
 export class MetricManager {
     script: PingCompensatedScript;

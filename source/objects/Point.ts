@@ -1,4 +1,4 @@
-import { CONSTANTS, Direction, Entity, IPosition, KindBase, Location, Player } from "../internal";
+import { CONSTANTS, Direction, IPosition, KindBase } from "../internal";
 
 export class Point extends KindBase {
     readonly x: number;
@@ -11,6 +11,22 @@ export class Point extends KindBase {
 
         this.x = x;
         this.y = y;
+    }
+
+    static fromIPosition(iPos: IPosition) {
+        return new Point(iPos.x, iPos.y);
+    }
+
+    static parse(str: string) {
+        let matches = str.match(/\(?(\d+)(?:,| |, )(\d+)\)?/i);
+
+        if (matches == null)
+            throw new EvalError(`failed to parse string ${str} as point`);
+
+        let x = Number.parseInt(matches[1]);
+        let y = Number.parseInt(matches[2]);
+
+        return new Point(x, y);
     }
 
     distance(other: Point | IPosition) {
@@ -111,18 +127,6 @@ export class Point extends KindBase {
         let radius = Math.random() * maxDistance;
 
         return new Point((Math.cos(angle) * radius) + this.x, (Math.sin(angle) * radius) + this.y);
-    }
-
-    static parse(str: string) {
-        let matches = str.match(/\(?(\d+)(?:,| |, )(\d+)\)?/i);
-
-        if (matches == null)
-            throw new EvalError(`failed to parse string ${str} as point`);
-
-        let x = Number.parseInt(matches[1]);
-        let y = Number.parseInt(matches[2]);
-
-        return new Point(x, y);
     }
 
     toString() {
