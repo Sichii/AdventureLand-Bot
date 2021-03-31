@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "alclient": "^0.3.11",
+    "chokidar": "^3.5.1"
+  },
+  "devDependencies": {
+    "chalk": "^4.1.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "outDir": "build",
+    "target": "ESNext",
+    "module": "CommonJS",
+    "strict": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": [ "ESNext", "DOM" ],
+    "watch": true
+  },
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Recommended",
+  "include": [ 
+    "source/**/*",
+    "source/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "compileOnSave": true
+}
