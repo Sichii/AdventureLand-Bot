@@ -231,7 +231,6 @@ export class MerchantScript extends ScriptBase<Merchant> {
         //if this item is required for crafting
         if (requiredForCrafting) {
             let quantityRequired = 0;
-            let stackable = Game.G.items[item.name].s;
 
             //check how much is required for whatever craft it's needed for
             for (let itemName of SETTINGS.ITEMS_TO_CRAFT) {
@@ -245,7 +244,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
             //check how many we have of this item
             if (quantityRequired > 0) {
-                let currentSlotsUsed = this.character.locateItems(item.name, undefined, { level: item.level }).length;
+                let currentSlotsUsed = this.character.locateItems(item.name, this.character.items, { level: item.level }).length;
 
                 //if we have over double the crafting requirements, we should bank it for now to save inv space
                 //we only really care about slots used, if something is stackable then it probably shouldnt be deposited
