@@ -2,13 +2,14 @@ import { Dictionary, List } from "../internal";
 
 export interface IEnumerable<T> extends Iterable<T> {
     first(): T;
-    firstOrDefault(predicate?: (item: T) => boolean): T | null;
+    firstOrDefault(predicate?: (item: T) => boolean): T | undefined;
     all(predicate: (item: T) => boolean): boolean;
     any(predicate: (item: T) => boolean): boolean;
     contains(item: T): boolean;
     count(predicate: (item: T) => boolean): number;
-    elementAt(index: number): T | null;
-    sumBy(selector: (item: T) => number): number;
+    elementAt(index: number): T | undefined;
+    sumBy(selector: (item: T) => number): number | undefined;
+    maxBy(selector: (item: T) => number): T | undefined;
 
     //iterators
     select<TResult>(selector: (item: T) => TResult): IEnumerable<TResult>;

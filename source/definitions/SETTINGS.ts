@@ -65,37 +65,19 @@ export class SETTINGS {
 
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
-        "ringsj", "hpbelt", "hpamulet", "ctristone",
-        //t1 stat amulets
-        "intamulet", "dexamulet", "stramulet",
-        //t1 stat belts
-        "intbelt", "dexbelt", "strbelt",
-        //t1 stat earrings
-        "intearring", "dexearring", "strearring",
-        //wants
-        <ItemName>"mbelt",
-        //easter shit
-        "rabbitsfoot",
-        //t1 stat rings
-        "strring", "intring", "dexring"
+        "ctristone"
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
-        //t1 armor
-        "wshoes", "wbreeches", "wgloves", "wattire", "wcap",
-        //t1 quiver
-        "quiver",
-        //rugged armor
-        "shoes1", "pants1", "gloves1", "coat1", "helmet1",
-        //wants
-        "woodensword", "swifty", "fireblade", "froststaff", "t2bow", "slimestaff",
-        //easter shit
-        "epyjamas", "eears", "pinkie", "eslippers", "carrotsword", "ecape", "oozingterror", "harbringer", "bataxe"
+        "fireblade", "froststaff", "t2bow",
+        "eslippers", "ecape", "oozingterror", "harbringer", "bataxe"
     ]);
 
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "snakeoil",
-        "bunnyelixir", "seashell"
+        "bunnyelixir", 
+        "seashell", 
+        "intearring", "dexearring", "strearring", "mbelt", "rabbitsfoot"
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
@@ -103,32 +85,14 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_BUY_FROM_PONTY = new List<ItemName>([
-        //"ringsj", 
-        //t1 stats rings
-        "dexring", //"strring", "intring", 
-        //t1 stat amulets
-        //"intamulet", "dexamulet", "stramulet",
-        //t1 stat belts
-        "intbelt", "dexbelt", "strbelt",
-        //t1 stat earrings
+        "dexring", 
         "intearring", "dexearring", "strearring",
-        //wants
-        <ItemName>"mbelt",
-
-        //t1 armor
-        //"wshoes", "wbreeches", "wgloves", "wattire", "wcap", 
-        //t1 quiver
-        "quiver",
-        //rugged armor
-        "shoes1", "pants1", "gloves1", "coat1", "helmet1",
-        //wants
-        "woodensword", "swifty", "fireblade", "froststaff", "t2bow"
+        "mbelt",
+        "fireblade", "froststaff", "t2bow",
     ]);
 
     static ITEMS_TO_SELL = new List<ItemName>([
-        "helmet", "shoes", "coat", "pants", "gloves",
-        "stinger", "mushroomstaff", "cclaw", "wshield",
-        "vitring", "hpamulet", "hpbelt"
+        "epyjamas", "eears", "pinkie", "carrotsword", 
     ]);
 
     static ITEMS_TO_EXCHANGE = new List<ItemName>([

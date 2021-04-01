@@ -75,6 +75,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             await this.upgradeItemsAsync();
             await this.compoundItemsAsync();
             await this.buyFromMerchantAsync();
+            await this.buyFromPontyAsync();
         }
     }
 
@@ -109,7 +110,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             ) {
                 await this.character.mluck(name)
                     .catch(() => { });
-                await PromiseExt.delay(150);
+                await PromiseExt.delay(200);
             }
         }
     }
@@ -178,7 +179,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             return true;
 
         for (let item of this.character.items) {
-            if (this.shouldDeposit(item))
+            if (item != null && this.shouldDeposit(item))
                 return true;
         }
 
@@ -191,8 +192,10 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (item == null)
                 continue;
 
-            if (this.shouldDeposit(item))
+            if (this.shouldDeposit(item)) {
                 await this.character.depositItem(+index);
+                return;
+            }
         }
     }
 
@@ -230,25 +233,25 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
         //if this item is required for crafting
         if (requiredForCrafting) {
-            let quantityRequired = 0;
+            let highestQuantityRequired = 0;
 
             //check how much is required for whatever craft it's needed for
             for (let itemName of SETTINGS.ITEMS_TO_CRAFT) {
                 let recipe = Game.G.craft[itemName];
 
                 if (recipe != null)
-                    for (let [quantity, name, level] of recipe?.items)
-                        if (name === item.name && quantity > quantityRequired && level === item.level)
-                            quantityRequired = quantity;
+                    for (let [quantityRequired, name, level] of recipe.items)
+                        if (name === item.name && quantityRequired > highestQuantityRequired && (level ?? 0) === (item.level ?? 0))
+                            highestQuantityRequired = quantityRequired;
             }
 
             //check how many we have of this item
-            if (quantityRequired > 0) {
+            if (highestQuantityRequired > 0) {
                 let currentSlotsUsed = this.character.locateItems(item.name, this.character.items, { level: item.level }).length;
 
                 //if we have over double the crafting requirements, we should bank it for now to save inv space
                 //we only really care about slots used, if something is stackable then it probably shouldnt be deposited
-                if (currentSlotsUsed > quantityRequired * 2)
+                if (currentSlotsUsed > (highestQuantityRequired * 2))
                     return true;
             }
         }
@@ -308,15 +311,17 @@ export class MerchantScript extends ScriptBase<Merchant> {
                 if (item == null)
                     continue;
 
-                if (this.shouldWithdrawlItem(item))
+                if (this.shouldWithdrawlItem(item)) {
                     await this.character.withdrawItem(<Exclude<BankPackType, "gold">>key, +index);
+                    return;
+                }
             }
         }
     }
 
     shouldWithdrawlItem(item: ItemInfo) {
         if (this.requiredForCrafting(item.name)) {
-            let quantityRequired = 0;
+            let highestQuantityRequired = 0;
 
             //check how much is required for whatever craft it's needed for
             for (let itemName of SETTINGS.ITEMS_TO_CRAFT) {
@@ -324,17 +329,17 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
                 if (recipe != null)
                     for (let [quantity, name, level] of recipe?.items)
-                        if (name === item.name && quantity > quantityRequired && level === item.level)
-                            quantityRequired = quantity;
+                        if (name === item.name && quantity > highestQuantityRequired && (level ?? 0) === (item.level ?? 0))
+                            highestQuantityRequired = quantity;
             }
 
             //check how many we have of this item
-            if (quantityRequired > 0) {
+            if (highestQuantityRequired > 0) {
                 let currentItems = this.character.locateItems(item.name, undefined, { level: item.level });
                 let currentQuantity = new List(currentItems)
                     .sumBy(item => this.character.items[item].q ?? 1);
                 //if we have less than double the crafting requirements, we should withdrawl it
-                if (currentQuantity < quantityRequired * 2)
+                if ((currentQuantity ?? 0) < highestQuantityRequired * 2)
                     return true;
             }
         }

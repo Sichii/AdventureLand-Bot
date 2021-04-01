@@ -13,7 +13,7 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
             if (predicate?.(item) ?? true)
                 return item;
 
-        return null;
+        return undefined;
     }
 
     all(predicate: (item: T) => boolean) {
@@ -51,20 +51,38 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
 
     elementAt(index: number) {
         let ci = 0;
+
         for(let item of this)
             if(index === ci++)
                 return item;
 
-        return null;
+        return undefined;
     }
 
-    sumBy(selector: (item: T) => number) {
-        let result = 0;
+    sumBy(selector: (item: T) => number): number | undefined {
+        let result: number | undefined;
 
-        for(let item of this)
+        for(let item of this) {
+            if(result == null)
+                result = 0;
+
             result += selector(item);
+        }
 
         return result;
+    }
+
+    maxBy(selector: (item: T) => number) {
+        let best: { item: T, val: number } | undefined;
+
+        for(let item of this) {
+            let newVal = selector(item);
+
+            if(best == null || newVal > best.val)
+                best = { item: item, val: newVal };
+        }
+
+        return best?.item;
     }
 
     toArray() {
