@@ -1,4 +1,4 @@
-import { List, MonsterName, ItemName, Location, Point } from "../internal";
+import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType } from "../internal";
 
 export class SETTINGS {
     //#region Attack
@@ -9,23 +9,26 @@ export class SETTINGS {
     //#endregion
 
     //#region Party
-    static PARTY_INFO = new List([
-        {
-            "name": "makiz",
-            "code_slot": 100,
-            "class": "warrior"
-        },
-        {
-            "name": "ragnah",
-            "code_slot": 99,
-            "class": "priest"
-        },
-        {
-            "name": "dreamweaver",
-            "code_slot": 98,
-            "class": "ranger"
-        }
-    ]);
+    static PARTY_INFO = new Dictionary<string, { class: string, elixir: ItemName }>(new Map<string, { class: string, elixir: ItemName }>(
+        [
+            ["sichi",
+                {
+                    "class": "merchant",
+                    "elixir": "bunnyelixir"
+                }], ["makiz",
+                {
+                    "class": "warrior",
+                    "elixir": "bunnyelixir"
+                }], ["ragnah",
+                {
+                    "class": "priest",
+                    "elixir": "bunnyelixir"
+                }], ["dreamweaver",
+                {
+                    "class": "ranger",
+                    "elixir": "bunnyelixir"
+                }]
+        ]));
 
     static LEADER_NAME = "makiz";
     static MERCHANT_NAME = "sichi";
@@ -66,7 +69,7 @@ export class SETTINGS {
 
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
-        "ctristone"
+        "ctristone", "vitring"
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
@@ -78,7 +81,7 @@ export class SETTINGS {
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "snakeoil",
         "bunnyelixir", 
         "seashell", 
-        "intearring", "dexearring", "strearring", "mbelt", "rabbitsfoot"
+        "intearring", "dexearring", "strearring", "vitearring", "mbelt", "rabbitsfoot", "goldenegg"
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
@@ -94,15 +97,20 @@ export class SETTINGS {
 
     static ITEMS_TO_SELL = new List<ItemName>([
         "epyjamas", "eears", "pinkie", "carrotsword", 
+        "hpbelt", "hpamulet", "ringsj",
+        "intamulet", "dexamulet", "stramulet"
     ]);
 
     static ITEMS_TO_EXCHANGE = new List<ItemName>([
-        "candy0", "candy1", "basketofeggs", "goldenegg", "gem0"
+        "candy0", "candy1", "basketofeggs", "gem0"
     ]);
 
-    //not implemented yet
     static ITEMS_TO_CRAFT = new List<ItemName>([
         "froststaff", "ctristone", "basketofeggs"
+    ]);
+
+    static readonly ITEM_TYPES_TO_KEEP = new List<ItemType>([
+        "pot", <ItemType>"elixir", <ItemType>"tracker"
     ]);
     //#endregion
 }

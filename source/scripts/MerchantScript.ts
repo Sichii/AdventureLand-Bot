@@ -1,4 +1,4 @@
-import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ServerIdentifier, ServerRegion, BankPackType, Dictionary } from "../internal";
+import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ItemType, ServerIdentifier, ServerRegion, BankPackType, Dictionary, CONSTANTS } from "../internal";
 
 export class MerchantScript extends ScriptBase<Merchant> {
     wasMoving: boolean;
@@ -47,7 +47,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (this.distance(leader.character) < 250) {
                 await this.tradeWithPartyAsync()
                     .catch(() => {});
-                    
+
                 this.visitParty = false;
             }
         } else if (false) {
@@ -128,8 +128,14 @@ export class MerchantScript extends ScriptBase<Merchant> {
             for (let key in theirMind.character.items) {
                 let item = theirMind.character.items[key];
 
-                if (item != null && !SETTINGS.POTIONS.contains(item.name) && item.name !== "tracker")
+                if (item != null) {
+                    let gItem = Game.G.items[item.name];
+
+                    if(gItem && SETTINGS.ITEM_TYPES_TO_KEEP.contains(gItem.type))
+                        continue;
+
                     await theirMind.character.sendItem(this.character.name, +key, item.q);
+                }
             }
 
             for (let potion of SETTINGS.POTIONS) {

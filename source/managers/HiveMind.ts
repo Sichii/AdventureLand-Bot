@@ -19,7 +19,10 @@ export class HiveMind extends Dictionary<string, PingCompensatedScript> {
         if(leader == null || !leader.isConnected)
             return false;
 
-        return SETTINGS.PARTY_INFO.select(info => info.name).all(memberName => {
+        return SETTINGS.PARTY_INFO
+            .keys
+            .where(memberName => memberName !== SETTINGS.MERCHANT_NAME)
+            .all(memberName => {
             let mind = this.getValue(memberName);
 
             if(mind == null)

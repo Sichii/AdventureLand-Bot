@@ -1,3 +1,5 @@
+import { ItemType, List } from "../internal";
+
 export class CONSTANTS {
     static readonly EPSILON = 1;
     static readonly PLAYER_WIDTH = 50;

@@ -1,9 +1,10 @@
 import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, OrderByEnumerableIterator } from "../internal";
 
 export abstract class EnumerableBase<T> implements IEnumerable<T> {
-    first() {
+    first(predicate?: (item: T) => boolean) {
         for(let item of this)
-            return item;
+            if(predicate?.(item) ?? true)
+                return item;
 
         throw new Error("This enumerable contains no elements.");
     }

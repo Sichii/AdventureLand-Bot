@@ -1,4 +1,4 @@
-import { Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager } from "../internal";
+import { Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
@@ -114,6 +114,12 @@ export abstract class PingCompensatedScript extends KindBase {
         if (this.character.rip)
             return await PromiseExt.delay(1000);
 
+        let expectedElixir = SETTINGS.PARTY_INFO.getValue(this.character.name)?.elixir ?? <ItemName>"";
+        let elixirSlot = this.character.locateItem(expectedElixir);
+
+        if(elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(Utility.msSince(new Date(this.character.slots.elixir.expires))) < 1000))
+            await this.character.equip(elixirSlot);
+
         if (this.mpPct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp")) {
             let potionToUse = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("mpot"))
@@ -140,7 +146,7 @@ export abstract class PingCompensatedScript extends KindBase {
         if (this.character.max_mp - this.character.mp > 100 && this.character.canUse("regen_mp"))
             return await this.character.regenMP();
 
-        return Promise.resolve(false);
+        return Promise.resolve();
     }
 
     distance(entity: Point | IPosition) {

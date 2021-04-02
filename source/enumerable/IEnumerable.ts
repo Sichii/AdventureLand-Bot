@@ -1,7 +1,7 @@
 import { Dictionary, List } from "../internal";
 
 export interface IEnumerable<T> extends Iterable<T> {
-    first(): T;
+    first(predicate?: (item: T) => boolean): T;
     firstOrDefault(predicate?: (item: T) => boolean): T | undefined;
     all(predicate: (item: T) => boolean): boolean;
     any(predicate: (item: T) => boolean): boolean;
