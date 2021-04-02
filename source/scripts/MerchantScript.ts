@@ -45,7 +45,9 @@ export class MerchantScript extends ScriptBase<Merchant> {
             await this.character.smartMove(leader.character, { getWithin: 200 });
 
             if (this.distance(leader.character) < 250) {
-                await this.tradeWithPartyAsync();
+                await this.tradeWithPartyAsync()
+                    .catch(() => {});
+                    
                 this.visitParty = false;
             }
         } else if (false) {

@@ -65,3 +65,6 @@ build/
 
 # credentials file
 credentials.json
+
+# settings
+source/definitions/SETTINGS.ts
