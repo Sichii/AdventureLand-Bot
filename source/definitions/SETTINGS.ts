@@ -36,7 +36,8 @@ export class SETTINGS {
     static FOLLOW_DISTANCE = 100;
     static MERCHANT_GOLD_TO_HOLD = 50000000;
     static MERCHANT_MIN_GOLD = 10000000;
-    static HEAL_AT = 0.75;
+    static MERCHANT_VISIT_PARTY_EVERY = 1000 * 60 * 15; //15mins
+    static PRIEST_HEAL_AT = 0.75;
     static HP_POT_AT = 0.375;
     static MP_POT_AT = 0.5;
     static POTION_THRESHOLD = 1000;

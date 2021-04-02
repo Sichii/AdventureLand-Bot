@@ -88,20 +88,30 @@ export class PriestScript extends ScriptBase<Priest> {
             .toList();
 
         if (party.length > 0) {
-            if (this.character.canUse("partyheal")
-                && (party.count(member => member.hpPct < SETTINGS.HEAL_AT * 0.75) > 1 
-                    || party.any(member => member.hpPct < SETTINGS.HEAL_AT/2)))
-                await this.character.partyHeal();
+            if (this.character.canUse("partyheal")) {
+                let lowLimit = SETTINGS.PRIEST_HEAL_AT/2;
+                let softLowLimit = SETTINGS.PRIEST_HEAL_AT * 0.75;
+                let shouldHeal = party
+                    .count(member => member.missingHp > 500 
+                        && member.hpPct < softLowLimit) > 1;
+    
+                if(shouldHeal || party.any(member => member.hpPct < lowLimit))
+                    await this.character.partyHeal();
+            }
 
-            if (this.character.canUse("heal"))
-                for (let x = 0; x < 100; x += 20) {
-                    let member = party.firstOrDefault(member => member.hpPct < x/100 && member.hpPct < SETTINGS.HEAL_AT && this.withinRange(member.character));
+            if (this.character.canUse("heal")) {
+                let memberToHeal = party
+                    .where(member => member.missingHp > this.character.attack
+                        && member.hpPct < SETTINGS.PRIEST_HEAL_AT
+                        && this.withinRange(member.character))
+                    .orderBy(member => member.hpPct)
+                    .firstOrDefault();
 
-                    if(member != null) {
-                        await this.character.heal(member.character.id);
-                        return true;
-                    }
-                }
+                if(memberToHeal != null) {
+                    await this.character.heal(memberToHeal.character.id);
+                    return true;
+                }  
+            }
         }
 
         return false;

@@ -24,7 +24,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
     async execute() {
         this.loopAsync(() => this.mainAsync(), 1000);
         this.loopAsync(() => this.handleStandAsync(), 1000 / 5);
-        this.loopAsync(async () => this.visitParty = true, 1000 * 60 * 30, true);
+        this.loopAsync(async () => this.visitParty = true, SETTINGS.MERCHANT_VISIT_PARTY_EVERY, true);
         //PromiseExt.loopAsync(() => this.buyFromPontyAsync(), 1000 * 60 * 1);
         this.loopAsync(() => this.luckBuffNearbyAsync(), 1000);
     }

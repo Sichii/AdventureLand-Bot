@@ -1,4 +1,3 @@
-import { CONSTANTS } from "../definitions/CONSTANTS";
 import { Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
@@ -12,8 +11,16 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.character.hp / this.character.max_hp;
     }
 
+    get missingHp() {
+        return this.character.max_hp - this.character.hp;
+    }
+
     get mpPct() {
         return this.character.mp / this.character.max_mp;
+    }
+
+    get missingMp() {
+        return this.character.max_mp - this.character.mp;
     }
 
     get point() {
