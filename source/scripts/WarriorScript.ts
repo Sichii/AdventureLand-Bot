@@ -135,15 +135,15 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 				//calculate the amount of hps we should expect to receive from the priest
 				let priest = this.hiveMind.values.firstOrDefault(mind => mind.character.ctype === "priest")
+				let possibleHps = 250;
 
-				if (priest != null) {
-					let possibleHps = priest.character.attack * priest.character.frequency;
+				if (priest != null)
+					possibleHps += (priest.character.attack * priest.character.frequency);
 
-					//if we expect more hps than incomming dps, we can cleave
-					//safety margin of hppots, partyHeal, and hardShell
-					if (expectedIncommingDps < possibleHps)
-						await this.character.cleave();
-				}
+				//if we expect more hps than incomming dps, we can cleave
+				//safety margin of hppots, partyHeal, and hardShell
+				if (expectedIncommingDps < possibleHps)
+					await this.character.cleave();
 			}
 		}
 

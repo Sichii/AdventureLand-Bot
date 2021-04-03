@@ -63,14 +63,31 @@ export class RangerScript extends ScriptBase<Ranger> {
 			if(target.s.marked && target.s.cursed && this.character.canUse("supershot") && this.withinSkillRange(target, "supershot"))
                 await this.character.superShot(target.id);
 
-        if(this.character.canUse("3shot") && leader != null) {
-            let possibleTargets = this.entities
-                .values
-                .where(entity => entity.target == leader?.character.id)
-                .toArray();
+        if(this.character.canUse("3shot")) {
+            let used = false;
 
-            if(possibleTargets.length >= 3)
-                await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id);
+            if (leader != null) {
+                let possibleTargets = this.entities
+                    .values
+                    .where(entity => entity.target == leader?.character.id)
+                    .toArray();
+
+                //3shot stuff hitting the leader
+                if (possibleTargets.length >= 3)
+                    used = (await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id), true);
+            }
+
+            //if we didnt already 3shot, see if we can 3shot weak stuff
+            if(!used) {
+                let possibleTargets = this.entities
+                    .values
+                    .where(entity => entity.hp <= this.character.attack * 1.4)
+                    .orderBy(entity => this.distance(entity))
+                    .toArray();
+
+                if(possibleTargets.length >= 3)
+                    await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id)
+            }
         }
 
         if(this.character.canUse("attack") && this.withinRange(target)) {

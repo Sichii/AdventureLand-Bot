@@ -43,7 +43,7 @@ export class SETTINGS {
     static PRIEST_HEAL_AT = 0.75;
     static HP_POT_AT = 0.375;
     static MP_POT_AT = 0.5;
-    static POTION_THRESHOLD = 1000;
+    static POTION_THRESHOLD = 2000;
     static SCROLLS_THRESHOLD = 50;
     static MAX_COMPOUND_LEVEL = 3;
     static MAX_UPGRADE_LEVEL = 7;
