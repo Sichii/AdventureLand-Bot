@@ -6,11 +6,13 @@ export class OrderByEnumerableIterator<T> extends EnumerableBase<T> {
     valueSelector: (item: T) => number;
     index = 0;
     keys: number[] | undefined;
+    desc: boolean;
 
     constructor(source: IEnumerable<T>, valueSelector: (item: T) => number, desc = false) {
         super();
         this.valueSelector = valueSelector;
         this.source = source;
+        this.desc = desc;
     }
 
     // the swap function doesn't need to change

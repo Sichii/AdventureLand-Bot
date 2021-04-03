@@ -3,7 +3,7 @@ import { SETTINGS, Game, HiveMind, Pathfinder, Priest, PromiseExt, ScriptBase, S
 export class PriestScript extends ScriptBase<Priest> {
     constructor(character: Priest, hiveMind: HiveMind) {
         super(character, hiveMind)
-        this.Kind.push("PriestScript");
+        this.Kind.add("PriestScript");
     }
 
     static async startAsync(name: string, region: ServerRegion, id: ServerIdentifier, hiveMind: HiveMind) {

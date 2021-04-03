@@ -6,7 +6,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
     constructor(entity: Merchant, hiveMind: HiveMind) {
         super(entity, hiveMind);
-        this.Kind.push("MerchantScript");
+        this.Kind.add("MerchantScript");
 
         this.wasMoving = true;
         this.visitParty = false;

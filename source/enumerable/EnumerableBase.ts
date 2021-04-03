@@ -1,4 +1,4 @@
-import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, OrderByEnumerableIterator } from "../internal";
+import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, OrderByEnumerableIterator, DefaultComparer, IEqualityComparer } from "../internal";
 
 export abstract class EnumerableBase<T> implements IEnumerable<T> {
     first(predicate?: (item: T) => boolean) {
@@ -33,9 +33,9 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         return false;
     }
 
-    contains(item: T) {
+    contains(item: T, comparer: IEqualityComparer<T> = new DefaultComparer<T>()) {
         for(let xItem of this)
-            if(xItem != null && xItem === item)
+            if(xItem != null && comparer.Equals(xItem, item))
                 return true;
 
         return false;
@@ -80,6 +80,19 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
             let newVal = selector(item);
 
             if(best == null || newVal > best.val)
+                best = { item: item, val: newVal };
+        }
+
+        return best?.item;
+    }
+
+    minBy(selector: (item: T) => number) {
+        let best: { item: T, val: number } | undefined;
+
+        for(let item of this) {
+            let newVal = selector(item);
+
+            if(best == null || newVal < best.val)
                 best = { item: item, val: newVal };
         }
 
@@ -139,8 +152,23 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
             yield item;
     }
 
-    orderBy(value_selector: (item: T) => number): IEnumerable<T> {
-        return new OrderByEnumerableIterator(this, value_selector);
+    reverse() {
+        return new DefaultEnumerableIterator(this.reverseIterator());
+    }
+
+    private *reverseIterator() {
+        let arr = this.toArray();
+
+        for(let i = arr.length - 1; i >= 0; i--)
+            yield arr[i];
+    }
+
+    orderBy(selector: (item: T) => number): IEnumerable<T> {
+        return new OrderByEnumerableIterator(this, selector);
+    }
+
+    orderByDesc(selector: (item: T) => number): IEnumerable<T> {
+        return this.orderBy(selector).reverse();
     }
 
     abstract [Symbol.iterator](): Iterator<T>;

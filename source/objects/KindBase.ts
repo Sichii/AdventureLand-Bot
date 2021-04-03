@@ -1,13 +1,15 @@
+import { List, StringComparer } from "../internal";
+
 export abstract class KindBase {
-    Kind: string[];
+    Kind: List<string>;
 
     constructor() {
-        this.Kind = new Array<string>();
-        this.Kind.push("Kind");
+        this.Kind = new List<string>();
+        this.Kind.add("Kind");
     }
 
     is(kind: string) {
-        return this.Kind.some(xKind => xKind.toLocaleLowerCase() === kind.toLocaleLowerCase());
+        return this.Kind.contains(kind, StringComparer.IgnoreCase)
     }
 
     as<T extends KindBase>(kind: string) {

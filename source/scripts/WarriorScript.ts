@@ -1,11 +1,9 @@
-import { Tools } from "alclient";
-import { Utility } from "../definitions/Utility";
-import { SETTINGS, Game, HiveMind, PromiseExt, ScriptBase, ServerIdentifier, ServerRegion, Location, Warrior, Pathfinder, List, Dictionary } from "../internal";
+import { SETTINGS, Game, HiveMind, PromiseExt, ScriptBase, ServerIdentifier, ServerRegion, Location, Warrior, Pathfinder, List, Dictionary, Utility } from "../internal";
 
 export class WarriorScript extends ScriptBase<Warrior> {
 	constructor(character: Warrior, hiveMind: HiveMind) {
 		super(character, hiveMind)
-		this.Kind.push("WarriorScript");
+		this.Kind.add("WarriorScript");
 	}
 
 	static async startAsync(name: string, region: ServerRegion, id: ServerIdentifier, hiveMind: HiveMind) {
@@ -22,8 +20,6 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		this.loopAsync(() => this.mainAsync(), 1000 / 30);
 		this.loopAsync(() => this.handleMovementAsync(), 1000 / 10);
 	}
-
-	//cleave	mp:720 (hits nearby enemies) -- need AXEa
 
 	async mainAsync() {
 		if (this.character.rip) {
@@ -116,6 +112,9 @@ export class WarriorScript extends ScriptBase<Warrior> {
 				let sample = entitiesInRange.elementAt(0)!;
 				let damageType = sample.damage_type;
 
+				if(sample.type === "pppompom" || sample.type === "fireroamer")
+					expectedIncommingDps += (entitiesInRange.length * 400);
+
 				//calculate how much dps we expect to take if we cleave
 				if (damageType === "physical") {
 					//TODO: replace '11' with actual courage
@@ -141,8 +140,9 @@ export class WarriorScript extends ScriptBase<Warrior> {
 					possibleHps += (priest.character.attack * priest.character.frequency);
 
 				//if we expect more hps than incomming dps, we can cleave
+				//or everything in range is already targeting me
 				//safety margin of hppots, partyHeal, and hardShell
-				if (expectedIncommingDps < possibleHps)
+				if (expectedIncommingDps < possibleHps || entitiesInRange.all(entity => entity.target === this.character.id))
 					await this.character.cleave();
 			}
 		}

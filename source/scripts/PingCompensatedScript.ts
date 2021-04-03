@@ -52,7 +52,7 @@ export abstract class PingCompensatedScript extends KindBase {
 
     constructor(character: PingCompensatedCharacter, hiveMind: HiveMind) {
         super();
-        this.Kind.push("ScriptBase");
+        this.Kind.add("ScriptBase");
 
         this.character = character;
         this.metricManager = new MetricManager(this);

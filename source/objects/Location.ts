@@ -7,7 +7,7 @@ export class Location extends KindBase {
 
     constructor(point: Point, map?: MapName) {
         super();
-        this.Kind.push("Location");
+        this.Kind.add("Location");
 
         this.map = map;
         this.point = point;

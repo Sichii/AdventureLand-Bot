@@ -5,7 +5,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
     constructor(character: T, hiveMind: HiveMind) {
         super(character, hiveMind);
-        this.Kind.push("ScriptBase");
+        this.Kind.add("ScriptBase");
 
         this.character = character;
     }

@@ -7,7 +7,7 @@ export class Point extends KindBase {
 
     constructor(x: number, y: number) {
         super();
-        this.Kind.push("Point");
+        this.Kind.add("Point");
 
         this.x = x;
         this.y = y;

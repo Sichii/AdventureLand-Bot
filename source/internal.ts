@@ -7,6 +7,14 @@ export * from "alclient/build/Priest";
 export * from "alclient/build/Ranger";
 export * from "alclient/build/Merchant";
 
+export * from "./comparer/IEqualityComparer";
+export * from "./comparer/IEquatable";
+export * from "./comparer/CaseInsensitiveStringComparer";
+export * from "./comparer/CaseSensitiveStringComparer";
+export * from "./comparer/StringComparer";
+export * from "./comparer/DefaultComparer";
+export * from "./comparer/EqualityComparer";
+
 export * from "./enumerable/IEnumerable"
 export * from "./enumerable/EnumerableBase";
 export * from "./enumerable/DefaultEnumerableIterator";
