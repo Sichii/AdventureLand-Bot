@@ -45,9 +45,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             await this.character.smartMove(leader.character, { getWithin: 200 });
 
             if (this.distance(leader.character) < 250) {
-                await this.tradeWithPartyAsync()
-                    .catch(() => {});
-
+                await this.tradeWithPartyAsync();
                 this.visitParty = false;
             }
         } else if (false) {
@@ -123,7 +121,16 @@ export class MerchantScript extends ScriptBase<Merchant> {
             .select(([, value]) => value);
 
         for (let theirMind of minds) {
-            await theirMind.character.sendGold(this.character.name, theirMind.character.gold);
+            if(theirMind.character.gold > 0)
+                await theirMind.character.sendGold(this.character.name, theirMind.character.gold)
+                    .catch(() => {});
+
+            for (let potion of SETTINGS.POTIONS) {
+                let theirQuantity = theirMind.character.countItem(potion);
+
+                if (theirQuantity < SETTINGS.POTION_THRESHOLD)
+                    await this.character.sendItem(theirMind.character.name, this.character.locateItem(potion), SETTINGS.POTION_THRESHOLD - theirQuantity);
+            }
 
             for (let key in theirMind.character.items) {
                 let item = theirMind.character.items[key];
@@ -137,15 +144,9 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     if(item.name == "handofmidas")
                         continue;
 
-                    await theirMind.character.sendItem(this.character.name, +key, item.q);
+                    if(!this.character.isFull())
+                        await theirMind.character.sendItem(this.character.name, +key, item.q);
                 }
-            }
-
-            for (let potion of SETTINGS.POTIONS) {
-                let theirQuantity = theirMind.character.countItem(potion);
-
-                if (theirQuantity < SETTINGS.POTION_THRESHOLD)
-                    await this.character.sendItem(theirMind.character.name, this.character.locateItem(potion), SETTINGS.POTION_THRESHOLD - theirQuantity);
             }
         }
     }
