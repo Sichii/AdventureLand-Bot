@@ -1,4 +1,5 @@
-import { SETTINGS, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location } from "../internal";
+import { List } from "../collections/List";
+import { SETTINGS, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location, Dictionary } from "../internal";
 
 export class RangerScript extends ScriptBase<Ranger> {
     constructor(character: Ranger, hiveMind: HiveMind) {
@@ -29,6 +30,17 @@ export class RangerScript extends ScriptBase<Ranger> {
     }
 
     async defenseAsync() {
+
+        if(this.character.canUse("4fingers")) {
+            let lowestPartyMember = this.hiveMind
+                .values
+                .where(member => this.withinSkillRange(member.character, "4fingers"))
+                .maxBy(member => 1 - member.hpPct);
+
+            if(lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT/2)
+                await this.character.fourFinger(lowestPartyMember.character.id);
+        }
+
 		return true;
     }
 
@@ -39,6 +51,7 @@ export class RangerScript extends ScriptBase<Ranger> {
 
     async offenseAsync() {
         let target = this.selectTarget(false);
+        let leader = this.hiveMind.leader;
 
         if (target == null || !this.hiveMind.readyToGo)
             return false;
@@ -49,6 +62,16 @@ export class RangerScript extends ScriptBase<Ranger> {
 		if(target.hp > this.character.attack * 5)
 			if(target.s.marked && target.s.cursed && this.character.canUse("supershot") && this.withinSkillRange(target, "supershot"))
                 await this.character.superShot(target.id);
+
+        if(this.character.canUse("3shot") && leader != null) {
+            let possibleTargets = this.entities
+                .values
+                .where(entity => entity.target == leader?.character.id)
+                .toArray();
+
+            if(possibleTargets.length >= 3)
+                await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id);
+        }
 
         if(this.character.canUse("attack") && this.withinRange(target)) {
             await this.character.basicAttack(target.id);

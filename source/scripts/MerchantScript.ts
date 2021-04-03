@@ -134,6 +134,9 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     if(gItem && SETTINGS.ITEM_TYPES_TO_KEEP.contains(gItem.type))
                         continue;
 
+                    if(item.name == "handofmidas")
+                        continue;
+
                     await theirMind.character.sendItem(this.character.name, +key, item.q);
                 }
             }

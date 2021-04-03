@@ -7,6 +7,14 @@ export abstract class PingCompensatedScript extends KindBase {
     commandManager: CommandManager;
     lastConnect: Date;
 
+    get entities() {
+        return new Dictionary(this.character.entities);
+    }
+
+    get players() {
+        return new Dictionary(this.character.players);
+    }
+
     get hpPct() {
         return this.character.hp / this.character.max_hp;
     }
@@ -158,7 +166,9 @@ export abstract class PingCompensatedScript extends KindBase {
     }
 
     withinRange(entity: Point | IPosition) {
-        return this.distance(entity) < this.character.range;
+        let distance = this.distance(entity);
+
+        return distance < this.character.range;
     }
 
     withinSkillRange(entity: Point | IPosition, skill: SkillName) {
@@ -207,8 +217,11 @@ export abstract class PingCompensatedScript extends KindBase {
                     continue;
 
                 //if it's targeting a party member, target it
-                if (entity.isAttackingPartyMember(this.character))
+                if (entity.isAttackingPartyMember(this.character)) {
+                    this.hiveMind.targetId = entity.id;
+                    this.character.target = entity.id;
                     return entity;
+                }
 
                 let entityLocation = Location.fromIPosition(entity);
 
@@ -253,7 +266,7 @@ export abstract class PingCompensatedScript extends KindBase {
         let location = Location.fromIPosition(entity);
 
         let circle = new WeightedCircle(location, maxDistance, maxDistance / 10);
-        let entities = new Dictionary(this.character.entities)
+        let entities = this.entities
             .values
             .where(xEntity => xEntity != null && xEntity.id !== entity.id)
             .toList();

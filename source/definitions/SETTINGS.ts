@@ -97,7 +97,7 @@ export class SETTINGS {
 
     static ITEMS_TO_SELL = new List<ItemName>([
         "epyjamas", "eears", "pinkie", "carrotsword", 
-        "hpbelt", "hpamulet", "ringsj",
+        "hpbelt", "hpamulet", "ringsj", "wcap",
         "intamulet", "dexamulet", "stramulet"
     ]);
 
