@@ -128,7 +128,7 @@ export abstract class PingCompensatedScript extends KindBase {
         if(elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(Utility.msSince(new Date(this.character.slots.elixir.expires))) < 1000))
             await this.character.equip(elixirSlot);
 
-        if (this.mpPct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp")) {
+        if (this.mpPct < SETTINGS.MP_POT_AT && this.missingMp > 300 && this.character.canUse("use_mp")) {
             let potionToUse = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("mpot"))
                 .select(potion => this.character.locateItem(potion))
@@ -138,7 +138,7 @@ export abstract class PingCompensatedScript extends KindBase {
                 return await this.character.useMPPot(potionToUse);
         }
 
-        if (this.hpPct < SETTINGS.HP_POT_AT && this.character.canUse("use_hp")) {
+        if (this.hpPct < SETTINGS.HP_POT_AT && this.missingHp > 300 && this.character.canUse("use_hp")) {
             let potionToUse = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("hpot"))
                 .select(potion => this.character.locateItem(potion))
@@ -148,11 +148,10 @@ export abstract class PingCompensatedScript extends KindBase {
                 return await this.character.useHPPot(potionToUse);
         }
 
-        if (this.hpPct < this.mpPct && this.character.max_hp - this.character.hp > 50 && this.character.canUse("regen_hp"))
-            return await this.character.regenHP();
-
-        if (this.character.max_mp - this.character.mp > 100 && this.character.canUse("regen_mp"))
+        if (this.missingMp > 100 && this.character.canUse("regen_mp"))
             return await this.character.regenMP();
+        else if (this.missingHp > 50 && this.character.canUse("regen_hp"))
+            return await this.character.regenHP();
 
         return Promise.resolve();
     }

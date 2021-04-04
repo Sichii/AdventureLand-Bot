@@ -133,15 +133,15 @@ export class MerchantScript extends ScriptBase<Merchant> {
             }
 
             for (let key in theirMind.character.items) {
+                if(+key > 34) //reserve bottom row 
+                    continue;
+
                 let item = theirMind.character.items[key];
 
                 if (item != null) {
                     let gItem = Game.G.items[item.name];
 
                     if(gItem && SETTINGS.ITEM_TYPES_TO_KEEP.contains(gItem.type))
-                        continue;
-
-                    if(item.name == "handofmidas")
                         continue;
 
                     if(!this.character.isFull())

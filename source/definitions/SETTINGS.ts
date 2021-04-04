@@ -41,9 +41,9 @@ export class SETTINGS {
     static MERCHANT_MIN_GOLD = 10000000;
     static MERCHANT_VISIT_PARTY_EVERY = 1000 * 60 * 15; //15mins
     static PRIEST_HEAL_AT = 0.75;
-    static HP_POT_AT = 0.375;
-    static MP_POT_AT = 0.5;
-    static POTION_THRESHOLD = 2000;
+    static HP_POT_AT = 0.333;
+    static MP_POT_AT = 0.666;
+    static POTION_THRESHOLD = 3000;
     static SCROLLS_THRESHOLD = 50;
     static MAX_COMPOUND_LEVEL = 3;
     static MAX_UPGRADE_LEVEL = 7;
@@ -69,19 +69,21 @@ export class SETTINGS {
 
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
-        "ctristone", "vitring"
+        //"ctristone", "vitring"
+        "wbook0",
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
-        "fireblade", "froststaff", "t2bow",
+        "handofmidas", "firestaff", "mcape",
+        "fireblade", "froststaff", "t2bow", 
         "eslippers", "ecape", "oozingterror", "harbringer", "bataxe"
     ]);
 
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
+        "cxjar", "seashell", "cryptkey", 
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "snakeoil",
-        "bunnyelixir", 
-        "seashell", 
-        "intearring", "dexearring", "strearring", "vitearring", "mbelt", "rabbitsfoot", "goldenegg"
+        "bunnyelixir", "mbelt", "rabbitsfoot", "goldenegg",
+        "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine",
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
@@ -97,7 +99,8 @@ export class SETTINGS {
 
     static ITEMS_TO_SELL = new List<ItemName>([
         "epyjamas", "eears", "pinkie", "carrotsword", 
-        "hpbelt", "hpamulet", "ringsj", "wcap",
+        "hpbelt", "hpamulet", "ringsj", 
+        "wcap", "wattire", "wgloves", "wbreeches",
         "intamulet", "dexamulet", "stramulet"
     ]);
 
