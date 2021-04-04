@@ -51,34 +51,7 @@ export class PriestScript extends ScriptBase<Priest> {
     }
 
     async handleMovementAsync() {
-		if(this.character.rip)
-			return;
-
-        let leader = this.hiveMind.leader;
-        if(leader != null && !this.canSee(leader.character)) {
-            await this.character.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
-            return false;
-        }
-
-        let target = this.selectTarget(false);
-        let hasTarget = target != null;
-
-        if(!hasTarget) {
-            let pollFunc = () => { 
-                target = this.selectTarget(false);
-                return target != null; 
-            };
-            await PromiseExt.pollWithTimeoutAsync(async () => pollFunc(), 1000);
-        }
-
-        if(target != null && Pathfinder.canWalkPath(this.location, Location.fromIPosition(target)))
-            await this.weightedMoveToEntityAsync(target, this.character.range * 1.25);
-        else if(target != null) {
-            let smartMove = this.character.smartMove(target, { getWithin: this.character.range / 2 })
-                .catch(() => {});
-
-            await PromiseExt.setTimeoutAsync(smartMove, 5000);
-        }
+        await this.followTheLeaderAsync();
     }
 
     async tryHealPartyAsync() {

@@ -42,9 +42,9 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (leader == null)
                 return;
 
-            await this.character.smartMove(leader.character, { getWithin: 200 });
+            await this.character.smartMove(leader.character, { getWithin: 150 });
 
-            if (this.distance(leader.character) < 250) {
+            if (this.distance(leader.character) < 200) {
                 await this.tradeWithPartyAsync();
                 this.visitParty = false;
             }
@@ -223,6 +223,9 @@ export class MerchantScript extends ScriptBase<Merchant> {
         let requiredForCrafting = this.requiredForCrafting(item.name);
 
         if (gItem.type === "material" && !requiredForCrafting)
+            return true;
+
+        if(gItem.type === <ItemType>"offering")
             return true;
 
         if (SETTINGS.ITEMS_TO_DEPOSIT.contains(item.name))

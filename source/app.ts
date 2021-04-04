@@ -8,10 +8,10 @@ async function main() {
         await Promise.all([initialize_pathfinder, login]);
 
         const hiveMind = new HiveMind();
-        const merchant = await MerchantScript.startAsync("sichi", "US", "III", hiveMind);
-        const warrior = await WarriorScript.startAsync("makiz", "US", "III", hiveMind);
-        const priest = await PriestScript.startAsync("ragnah", "US", "III", hiveMind);
-        const ranger = await RangerScript.startAsync("dreamweaver", "US", "III", hiveMind);
+        const merchant = await MerchantScript.startAsync("sichi", "US", "II", hiveMind);
+        const warrior = await WarriorScript.startAsync("makiz", "US", "II", hiveMind);
+        const priest = await PriestScript.startAsync("ragnah", "US", "II", hiveMind);
+        const ranger = await RangerScript.startAsync("dreamweaver", "US", "II", hiveMind);
 
         //merchant.visitParty = true;
     } catch (e) {

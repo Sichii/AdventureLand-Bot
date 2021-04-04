@@ -36,7 +36,7 @@ export class RangerScript extends ScriptBase<Ranger> {
                 .where(member => this.withinSkillRange(member.character, "4fingers"))
                 .minBy(member => member.hpPct);
 
-            if(lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT/2)
+            if(lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT/3)
                 await this.character.fourFinger(lowestPartyMember.character.id);
         }
 
@@ -80,7 +80,7 @@ export class RangerScript extends ScriptBase<Ranger> {
             if(!used) {
                 let possibleTargets = this.entities
                     .values
-                    .where(entity => entity.hp <= this.character.attack * 1.4)
+                    .where(entity => entity.hp <= this.character.attack * 2)
                     .orderBy(entity => this.distance(entity))
                     .toArray();
 
@@ -98,32 +98,6 @@ export class RangerScript extends ScriptBase<Ranger> {
     }
 
     async handleMovementAsync() {
-		if(this.character.rip)
-			return;
-
-        let leader = this.hiveMind.leader;
-        if(leader != null && !this.canSee(leader.character)) {
-            await this.character.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
-            return false;
-        }
-
-        let target = this.selectTarget(false);
-        let hasTarget = target != null;
-        if(!hasTarget) {
-            let pollFunc = () => { 
-                target = this.selectTarget(false);
-                return target != null; 
-            };
-            await PromiseExt.pollWithTimeoutAsync(async () => pollFunc(), 1000);
-        }
-
-        if(target != null && Pathfinder.canWalkPath(this.location, Location.fromIPosition(target)))
-            await this.weightedMoveToEntityAsync(target, this.character.range * 1.25);
-        else if(target != null) {
-            let smartMove = this.character.smartMove(target, { getWithin: this.character.range / 2 })
-                .catch(() => {});
-
-            await PromiseExt.setTimeoutAsync(smartMove, 5000);
-        }
+        await this.followTheLeaderAsync();
     }
 }

@@ -6,6 +6,9 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
 
     constructor(center: Location, radius: number, stepSize: number) {
         super();
+
+        radius *= 1.5;
+
         this.center = center;
         this.radius = radius;
 
@@ -38,7 +41,7 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
             //closer points are better
             //mid-range gravity: points at mid-range are better to give more options for movement
             entry.weight += distanceToCurrent ** 2;
-            entry.weight += (Math.abs(this.radius / 2) - distanceFromCenter) ** 2;
+            entry.weight += (Math.abs(this.radius / 3) - distanceFromCenter) ** 2;
 
             for (let entity of entities) {
                 if (entity == null)
@@ -46,7 +49,7 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
 
                 let entityPoint = Point.fromIPosition(entity);
                 let distanceToEntity = entry.location.point.distance(entityPoint);
-                let range = Math.max((entity.range * entity.aggro + entity.speed) - distanceToEntity, 0);
+                let range = Math.max(((entity.range * entity.aggro) + (entity.speed/2) + CONSTANTS.ENTITY_WIDTH) - distanceToEntity, 0);
 
                 entry.weight += range ** 5;                    
             }

@@ -35,30 +35,34 @@ export class WarriorScript extends ScriptBase<Warrior> {
 	async lootAsync() {
 		if (this.character.rip || this.character.chests.size == 0)
 			return;
-
+		
 		let midasSlot = this.character.locateItem("handofmidas");
 		let merchant = this.hiveMind.getValue(SETTINGS.MERCHANT_NAME);
 		let midasEquipped = false;
 		//equip handofmidas only when merchant isnt nearby
 		if(midasSlot != null && (merchant == null || !this.canSee(merchant.character))) {
 			midasEquipped = true;
-			await this.character.equip(midasSlot);
+			await this.character.equip(midasSlot)
+				.catch(() => {});
 		}
 
-		let index = 0;
-		for (let [id, chest] of this.character.chests) {
-			if (this.distance(chest) < 100) {
-				await this.character.openChest(id);
-				index++;
+		try {
+			let index = 0;
+			for (let [id, chest] of this.character.chests) {
+				if (this.distance(chest) < 100) {
+					await this.character.openChest(id);
+					index++;
+				}
+
+				if (index >= 10)
+					break;
 			}
-
-			if (index >= 10)
-				break;
+		} finally {
+			//equip whatever gloves we had on before handofmidas
+			if (midasEquipped)
+				await this.character.equip(midasSlot)
+					.catch(() => {});
 		}
-
-		//equip whatever gloves we had on before handofmidas
-		if(midasEquipped)
-			await this.character.equip(midasSlot);
 	}
 
 	async defenseAsync() {
@@ -76,15 +80,11 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		}
 
 		if (this.character.canUse("hardshell")) {
-			if (this.hpPct < (SETTINGS.HP_POT_AT * 0.66)) {
+			if (this.hpPct < (SETTINGS.PRIEST_HEAL_AT/2)) {
 				let target = this.selectTarget(false);
 
-				if (target != null) {
-					let gEntity = Game.G.monsters[target.type];
-
-					if (gEntity.damage_type === "physical")
-						await this.character.hardshell();
-				}
+				if (target != null && target.damage_type === "physical")
+					await this.character.hardshell();
 			}
 		}
 
@@ -114,6 +114,14 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 				if(sample.type === "pppompom" || sample.type === "fireroamer")
 					expectedIncommingDps += (entitiesInRange.length * 400);
+
+				let armor = this.character.armor + 200;
+				let resistance = this.character.resistance;
+
+				if(this.character.s.hardshell)
+					armor -= Game.G.conditions.hardshell.armor!;
+				if(this.character.s.fingered)
+					resistance -= Game.G.conditions.fingered.resistance!;
 
 				//calculate how much dps we expect to take if we cleave
 				if (damageType === "physical") {
@@ -180,7 +188,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 				}
 			}
 		} else {
-			let hasTarget = await PromiseExt.pollWithTimeoutAsync(async () => this.selectTarget(true) != null, 2000);
+			let hasTarget = await PromiseExt.pollWithTimeoutAsync(async () => this.selectTarget(true) != null, 5000);
 
 			if (!hasTarget)
 				await this.character.smartMove(SETTINGS.ATTACK_MTYPES.first(), { getWithin: 400 });

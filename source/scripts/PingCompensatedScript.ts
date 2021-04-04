@@ -109,11 +109,11 @@ export abstract class PingCompensatedScript extends KindBase {
 
     monitorCC() {
         if (this.character.cc > 120)
-            Logger.Error(`[${this.character.name}] cc: ${this.character.cc}`);
+            Logger.Error(`[${this.character.name}] cc: ${~~this.character.cc}`);
         else if (this.character.cc > 60)
-            Logger.Error(`[${this.character.name}] cc: ${this.character.cc}`);
+            Logger.Error(`[${this.character.name}] cc: ${~~this.character.cc}`);
         else if (this.character.cc > 30)
-            Logger.Warn(`[${this.character.name}] cc: ${this.character.cc}`);
+            Logger.Warn(`[${this.character.name}] cc: ${~~this.character.cc}`);
 
         return true;
     }
@@ -156,6 +156,35 @@ export abstract class PingCompensatedScript extends KindBase {
         return Promise.resolve();
     }
 
+    async followTheLeaderAsync() {
+        if (this.character.rip)
+            return;
+
+        let leader = this.hiveMind.leader;
+        if (leader != null && (!this.canSee(leader.character)))
+            await this.character.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
+
+        let target = this.selectTarget(false);
+        let hasTarget = target != null;
+        if (!hasTarget) {
+            let pollFunc = () => {
+                target = this.selectTarget(false);
+                return target != null;
+            };
+            await PromiseExt.pollWithTimeoutAsync(async () => pollFunc(), 1000);
+        }
+
+        if (target != null && Pathfinder.canWalkPath(this.location, Location.fromIPosition(target)))
+            await this.weightedMoveToEntityAsync(target, this.character.range);
+        else if (target != null) {
+            let smartMove = this.character.smartMove(target, { getWithin: this.character.range / 2 })
+                .catch(() => { });
+
+            await PromiseExt.setTimeoutAsync(smartMove, 5000);
+        } else if (leader != null)
+            await this.character.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
+    }
+
     distance(entity: Point | IPosition) {
         return this.location.distance(entity);
     }
@@ -164,10 +193,10 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.distance(entity) < 600;
     }
 
-    withinRange(entity: Point | IPosition) {
+    withinRange(entity: Point | IPosition, range = this.character.range) {
         let distance = this.distance(entity);
 
-        return distance < this.character.range;
+        return distance < range;
     }
 
     withinSkillRange(entity: Point | IPosition, skill: SkillName) {
@@ -205,18 +234,22 @@ export abstract class PingCompensatedScript extends KindBase {
         if (myTarget && myTarget.hp > 0)
             return myTarget;
 
+        if(this.hiveMind.lockTarget != null && this.distance(this.hiveMind.lockTarget) > this.character.range)
+            return this.hiveMind.lockTarget;
+
         if (!freeTarget) {
             return null;
         } else {
+            this.hiveMind.lockTarget = undefined;
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
 
             for (let [, entity] of this.character.entities) {
 
-                if (entity == null || !SETTINGS.ATTACKABLE_BOSSES.concat(SETTINGS.ATTACK_MTYPES).contains(entity.type) || !this.canSee(entity) || entity.hp <= 0)
+                if (entity == null || !SETTINGS.ATTACKABLE_BOSSES.concat(SETTINGS.ATTACK_MTYPES).contains(entity.type) || entity.hp <= 0)
                     continue;
 
                 //if it's targeting a party member, target it
-                if (entity.isAttackingPartyMember(this.character)) {
+                if (entity.isAttackingPartyMember(this.character) && this.canSee(entity)) {
                     this.hiveMind.targetId = entity.id;
                     this.character.target = entity.id;
                     return entity;
@@ -255,8 +288,13 @@ export abstract class PingCompensatedScript extends KindBase {
                 }
             }
 
-            this.hiveMind.targetId = current?.target?.id;
-            this.character.target = current?.target?.id;
+            let finalTarget = current?.target;
+            this.hiveMind.targetId = finalTarget?.id;
+            this.character.target = finalTarget?.id;
+
+            if(finalTarget != null && this.distance(finalTarget) > 600)
+                this.hiveMind.lockTarget = finalTarget;
+
             return current?.target ?? null;
         }
     }

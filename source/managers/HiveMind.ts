@@ -1,7 +1,9 @@
+import { Entity } from "alclient/build/Entity";
 import { Dictionary, PingCompensatedScript, PromiseExt, SETTINGS } from "../internal";
 
 export class HiveMind extends Dictionary<string, PingCompensatedScript> {
     targetId?: string;
+    lockTarget?: Entity;
 
     constructor() {
         super();

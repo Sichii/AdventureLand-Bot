@@ -3,9 +3,9 @@ import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType } fr
 export class SETTINGS {
     //#region Attack
     static ATTACK_MTYPES = new List<MonsterName>([
-        "bbpompom"
+        "mole",
     ]);
-    static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr"]);
+    static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr", "jr", "mvampire", "goldenbat", "phoenix" ]);
     //#endregion
 
     //#region Party
@@ -74,16 +74,18 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
-        "handofmidas", "firestaff", "mcape",
+        "handofmidas", "firestaff", "mcape", "quiver",
         "fireblade", "froststaff", "t2bow", 
-        "eslippers", "ecape", "oozingterror", "harbringer", "bataxe"
+        "eslippers", "ecape", "oozingterror", "harbringer", "bataxe",
+        "throwingstars", "basher", "crossbow",
     ]);
 
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
-        "cxjar", "seashell", "cryptkey", 
+        "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3",
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "snakeoil",
         "bunnyelixir", "mbelt", "rabbitsfoot", "goldenegg",
-        "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine",
+        "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine", 
+        "suckerpunch", "fury", "starkillers"
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
@@ -99,13 +101,21 @@ export class SETTINGS {
 
     static ITEMS_TO_SELL = new List<ItemName>([
         "epyjamas", "eears", "pinkie", "carrotsword", 
-        "hpbelt", "hpamulet", "ringsj", 
-        "wcap", "wattire", "wgloves", "wbreeches",
-        "intamulet", "dexamulet", "stramulet"
+        "hpbelt", "hpamulet", "ringsj", "crabclaw",
+        "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
+        "intamulet", "dexamulet", "stramulet",
+        "spear", "pmace", "hammer", "rapier", "sword", "dagger",
+
+        //rugged armor
+        "coat1", "helmet1", "pants1", "gloves1", "shoes1",
+        //heavy armor
+        "harmor", "hhelmet", "hpants", "hgloves", "hboots",
+        //darkforge armor
+        "xarmor", "xhelmet", "xpants", "xgloves", "xboots"
     ]);
 
     static ITEMS_TO_EXCHANGE = new List<ItemName>([
-        "candy0", "candy1", "basketofeggs", "gem0"
+        "candy0", "candy1", "basketofeggs", "gem0", "armorbox", "weaponbox",
     ]);
 
     static ITEMS_TO_CRAFT = new List<ItemName>([
