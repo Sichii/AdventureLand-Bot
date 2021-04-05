@@ -17,7 +17,7 @@ export class PriestScript extends ScriptBase<Priest> {
 
     execute() {
         this.loopAsync(() => this.mainAsync(), 30);
-        this.loopAsync(() => this.handleMovementAsync(), 1000 / 10);
+        this.loopAsync(() => this.handleMovementAsync(), 1000 / 10, false, true);
     }
 
     async mainAsync() {

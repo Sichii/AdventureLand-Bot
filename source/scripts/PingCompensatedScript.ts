@@ -1,4 +1,4 @@
-import { Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName } from "../internal";
+import { NodeData, MapName, MonsterName, NPCType, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
@@ -6,6 +6,11 @@ export abstract class PingCompensatedScript extends KindBase {
     hiveMind: HiveMind;
     commandManager: CommandManager;
     lastConnect: Date;
+    isSmartMoving: boolean = false;
+
+    get items() {
+        return new List(this.character.items);
+    }
 
     get entities() {
         return new Dictionary(this.character.entities);
@@ -71,11 +76,14 @@ export abstract class PingCompensatedScript extends KindBase {
     abstract execute(): void;
     abstract mainAsync(): Promise<void>
 
-    async loopAsync(func: () => Promise<any>, msMinDelay: number, delayStart?: boolean) {
+    async loopAsync(func: () => Promise<any>, msMinDelay: number, delayStart?: boolean, ignoreSmartMove = false) {
         let wrapperFunc = async () => {
             try {
                 if (!this.isConnected)
-                    await PromiseExt.delay(10000);
+                    await PromiseExt.delay(5000);
+                else if(this.isSmartMoving && !ignoreSmartMove) {
+                    await PromiseExt.delay(250);
+                }
                 else {
                     await func();
                     await PromiseExt.delay(msMinDelay);
@@ -162,7 +170,7 @@ export abstract class PingCompensatedScript extends KindBase {
 
         let leader = this.hiveMind.leader;
         if (leader != null && (!this.canSee(leader.character)))
-            await this.character.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
+            await this.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE })
 
         let target = this.selectTarget(false);
         let hasTarget = target != null;
@@ -177,12 +185,12 @@ export abstract class PingCompensatedScript extends KindBase {
         if (target != null && Pathfinder.canWalkPath(this.location, Location.fromIPosition(target)))
             await this.weightedMoveToEntityAsync(target, this.character.range);
         else if (target != null) {
-            let smartMove = this.character.smartMove(target, { getWithin: this.character.range / 2 })
+            let smartMove = this.smartMove(target, { getWithin: this.character.range / 2 })
                 .catch(() => { });
 
             await PromiseExt.setTimeoutAsync(smartMove, 5000);
         } else if (leader != null)
-            await this.character.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
+            await this.smartMove(leader.location, { getWithin: SETTINGS.FOLLOW_DISTANCE });
     }
 
     distance(entity: Point | IPosition) {
@@ -234,13 +242,9 @@ export abstract class PingCompensatedScript extends KindBase {
         if (myTarget && myTarget.hp > 0)
             return myTarget;
 
-        if(this.hiveMind.lockTarget != null && this.distance(this.hiveMind.lockTarget) > this.character.range)
-            return this.hiveMind.lockTarget;
-
         if (!freeTarget) {
             return null;
         } else {
-            this.hiveMind.lockTarget = undefined;
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
 
             for (let [, entity] of this.character.entities) {
@@ -292,9 +296,6 @@ export abstract class PingCompensatedScript extends KindBase {
             this.hiveMind.targetId = finalTarget?.id;
             this.character.target = finalTarget?.id;
 
-            if(finalTarget != null && this.distance(finalTarget) > 600)
-                this.hiveMind.lockTarget = finalTarget;
-
             return current?.target ?? null;
         }
     }
@@ -320,8 +321,17 @@ export abstract class PingCompensatedScript extends KindBase {
             await this.character.move(bestPoint.x, bestPoint.y, true)
                 .catch(() => { });
         else
-            await this.character.smartMove(location, { getWithin: this.character.range });
+            await this.smartMove(location, { getWithin: this.character.range });
 
         return Promise.resolve();
+    }
+
+    smartMove(to: MapName | MonsterName | NPCType | IPosition, options?: {
+        getWithin?: number;
+        useBlink?: boolean;
+    }): Promise<NodeData> {
+        this.isSmartMoving = true;
+        return this.character.smartMove(to, options)
+            .finally(() => this.isSmartMoving = false);
     }
 }

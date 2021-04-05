@@ -23,7 +23,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
     async execute() {
         this.loopAsync(() => this.mainAsync(), 1000);
-        this.loopAsync(() => this.handleStandAsync(), 1000 / 5);
+        this.loopAsync(() => this.handleStandAsync(), 1000 / 5, false, true);
         this.loopAsync(async () => this.visitParty = true, SETTINGS.MERCHANT_VISIT_PARTY_EVERY, true);
         //PromiseExt.loopAsync(() => this.buyFromPontyAsync(), 1000 * 60 * 1);
         this.loopAsync(() => this.luckBuffNearbyAsync(), 1000);
@@ -42,7 +42,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (leader == null)
                 return;
 
-            await this.character.smartMove(leader.character, { getWithin: 150 });
+            await this.smartMove(leader.character, { getWithin: 150 });
 
             if (this.distance(leader.character) < 200) {
                 await this.tradeWithPartyAsync();
@@ -51,7 +51,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
         } else if (false) {
             //TODO: add dismantle logic
         } else if (this.shouldGoToBank()) {
-            await this.character.smartMove("bank");
+            await this.smartMove("bank");
 
             if (this.character.map === "bank" && this.character.bank != null) {
                 await this.depositGoldAsync();
@@ -61,13 +61,13 @@ export class MerchantScript extends ScriptBase<Merchant> {
                 //manage inventory?
             }
         } else if (this.shouldGoCraft()) {
-            await this.character.smartMove("craftsman", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
+            await this.smartMove("craftsman", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
             await this.craftAllItemsAsync();
         } else if (this.shouldExchangeItems()) {
-            await this.character.smartMove("exchange", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
+            await this.smartMove("exchange", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
             await this.exchangeItemsAsync();
         } else if (this.distance(SETTINGS.MERCHANT_STAND_LOCATION) > 10)
-            await this.character.smartMove(SETTINGS.MERCHANT_STAND_LOCATION);
+            await this.smartMove(SETTINGS.MERCHANT_STAND_LOCATION);
         else {
             await this.buyPotionsAsync();
             await this.buyScrollsAsync();
@@ -190,12 +190,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
         if (this.character.gold < SETTINGS.MERCHANT_MIN_GOLD)
             return true;
 
-        for (let item of this.character.items) {
-            if (item != null && this.shouldDeposit(item))
-                return true;
-        }
-
-        return false;
+        return this.items.any(item => item != null && this.shouldDeposit(item));
     }
 
     async depositItemsAsync() {
@@ -549,7 +544,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (this.character.isFull())
                 return;
 
-            if (!(new List(this.character.items).any(item => item != null && item.name === itemName)))
+            if (!this.items.any(item => item != null && item.name === itemName))
                 await this.character.buy(itemName);
         }
     }

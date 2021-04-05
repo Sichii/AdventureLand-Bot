@@ -6,6 +6,7 @@ export * from "alclient/build/Warrior";
 export * from "alclient/build/Priest";
 export * from "alclient/build/Ranger";
 export * from "alclient/build/Merchant";
+export * from "alclient/build/definitions/pathfinder";
 
 export * from "./comparer/IEqualityComparer";
 export * from "./comparer/IEquatable";

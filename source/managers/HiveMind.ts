@@ -3,7 +3,6 @@ import { Dictionary, PingCompensatedScript, PromiseExt, SETTINGS } from "../inte
 
 export class HiveMind extends Dictionary<string, PingCompensatedScript> {
     targetId?: string;
-    lockTarget?: Entity;
 
     constructor() {
         super();
@@ -30,7 +29,7 @@ export class HiveMind extends Dictionary<string, PingCompensatedScript> {
             if(mind == null)
                 return false;
 
-            if(leader != null && mind.distance(leader.character) > mind.character.range * 1.25)
+            if(leader != null && mind.distance(leader.character) > Math.max(mind.character.range * 1.25, 150))
                 return false;
 
             return true;

@@ -17,7 +17,7 @@ export class RangerScript extends ScriptBase<Ranger> {
 
     execute() {
         this.loopAsync(() => this.mainAsync(), 1000 / 30);
-        this.loopAsync(() => this.handleMovementAsync(), 1000 / 10);
+        this.loopAsync(() => this.handleMovementAsync(), 1000 / 10, false, true);
     }
 
     async mainAsync() {
@@ -30,23 +30,18 @@ export class RangerScript extends ScriptBase<Ranger> {
 
     async defenseAsync() {
 
-        if(this.character.canUse("4fingers")) {
+        if (this.character.canUse("4fingers")) {
             let lowestPartyMember = this.hiveMind
                 .values
                 .where(member => this.withinSkillRange(member.character, "4fingers"))
                 .minBy(member => member.hpPct);
 
-            if(lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT/3)
+            if (lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT / 2.5)
                 await this.character.fourFinger(lowestPartyMember.character.id);
         }
 
-		return true;
+        return true;
     }
-
-	//poisonarrow mp:360
-	//supershot   mp:400 
-	//huntersmark mp:240 (debuff 10s +10% dmg)
-	//3shot       mp:300
 
     async offenseAsync() {
         let target = this.selectTarget(false);
@@ -55,14 +50,7 @@ export class RangerScript extends ScriptBase<Ranger> {
         if (target == null || !this.hiveMind.readyToGo)
             return false;
 
-		if(target.hp > this.character.attack * 10 && this.character.canUse("huntersmark") && this.withinSkillRange(target, "huntersmark"))
-            await this.character.huntersMark(target.id);
-
-		if(target.hp > this.character.attack * 5)
-			if(target.s.marked && target.s.cursed && this.character.canUse("supershot") && this.withinSkillRange(target, "supershot"))
-                await this.character.superShot(target.id);
-
-        if(this.character.canUse("3shot")) {
+        if (this.character.canUse("3shot")) {
             let used = false;
 
             if (leader != null) {
@@ -77,19 +65,26 @@ export class RangerScript extends ScriptBase<Ranger> {
             }
 
             //if we didnt already 3shot, see if we can 3shot weak stuff
-            if(!used) {
+            if (!used) {
                 let possibleTargets = this.entities
                     .values
                     .where(entity => entity.hp <= this.character.attack * 2)
                     .orderBy(entity => this.distance(entity))
                     .toArray();
 
-                if(possibleTargets.length >= 3)
+                if (possibleTargets.length >= 3)
                     await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id)
             }
         }
 
-        if(this.character.canUse("attack") && this.withinRange(target)) {
+        if (target.hp > this.character.attack * 10 && this.character.canUse("huntersmark") && this.withinSkillRange(target, "huntersmark"))
+            await this.character.huntersMark(target.id);
+
+        if (target.hp > this.character.attack * 5)
+            if (target.s.marked && target.s.cursed && this.character.canUse("supershot") && this.withinSkillRange(target, "supershot"))
+                await this.character.superShot(target.id);
+
+        if (this.character.canUse("attack") && this.withinRange(target)) {
             await this.character.basicAttack(target.id);
             return true;
         }

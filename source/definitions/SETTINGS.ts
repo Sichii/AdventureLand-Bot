@@ -3,7 +3,7 @@ import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType } fr
 export class SETTINGS {
     //#region Attack
     static ATTACK_MTYPES = new List<MonsterName>([
-        "mole",
+        "mole"//"bat", <MonsterName>"vbat"
     ]);
     static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr", "jr", "mvampire", "goldenbat", "phoenix" ]);
     //#endregion
