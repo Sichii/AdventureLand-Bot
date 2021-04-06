@@ -19,7 +19,6 @@ export * from "./comparer/EqualityComparer";
 export * from "./enumerable/IEnumerable"
 export * from "./enumerable/EnumerableBase";
 export * from "./enumerable/DefaultEnumerableIterator";
-export * from "./enumerable/OrderByEnumerableIterator";
 
 export * from "./collections/List";
 export * from "./collections/Dictionary";
