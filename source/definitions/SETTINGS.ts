@@ -16,6 +16,7 @@ export class SETTINGS {
                 {
                     "class": "warrior",
                     "elixir": "bunnyelixir",
+                    "kite": false,
                     "attackMTypes": new List([
                         "bat"
                     ]),
@@ -24,6 +25,7 @@ export class SETTINGS {
                 {
                     "class": "priest",
                     "elixir": "bunnyelixir",
+                    "kite": true,
                     "attackMTypes": new List([
                         "bat"
                     ]),
@@ -32,6 +34,7 @@ export class SETTINGS {
                 {
                     "class": "ranger",
                     "elixir": "bunnyelixir",
+                    "kite": true,
                     "attackMTypes": new List([
                         "bat"
                     ]),
@@ -52,7 +55,7 @@ export class SETTINGS {
     //#region Thresholds
     static MERCHANT_GOLD_TO_HOLD = 50000000;
     static MERCHANT_MIN_GOLD = 10000000;
-    static MERCHANT_VISIT_PARTY_EVERY = 1000 * 60 * 15; //15mins
+    static MERCHANT_VISIT_PARTY_EVERY = 1000 * 60 * 5; //15mins
     static PRIEST_HEAL_AT = 0.75;
     static HP_POT_AT = 0.5;
     static MP_POT_AT = 0.75;

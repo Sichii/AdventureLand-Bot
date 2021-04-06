@@ -74,21 +74,12 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 			//only worth cleaving if we're going to hit more stuff
 			if (entitiesInRange.length >= 3) {
-				let expectedIncommingDps = this.calculatePotentialDamage(entitiesInRange.toArray());
-
-				//calculate the amount of hps we should expect to receive from the priest
-				let priest = this.followers.firstOrDefault(script => script?.character.ctype === "priest");
-				let possibleHps = 0;
-
-				if (priest != null)
-					possibleHps += (priest.character.level * 2.5) + (priest.character.attack * priest.character.frequency);
-				else
-					possibleHps = 300;
+				let expectedIncomingDps = this.calculatePotentialDamage(entitiesInRange.toArray());
 
 				//if we expect more hps than incomming dps, we can cleave
 				//or everything in range is already targeting me
 				//safety margin of hppots, partyHeal, and hardShell
-				if (expectedIncommingDps < possibleHps || entitiesInRange.all(entity => entity.target === this.character.id))
+				if (expectedIncomingDps < this.incomingHPS || entitiesInRange.all(entity => entity.target === this.character.id))
 					await this.character.cleave();
 			}
 		}

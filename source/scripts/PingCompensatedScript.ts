@@ -181,10 +181,12 @@ export abstract class PingCompensatedScript extends KindBase {
     smartMove(to: MapName | MonsterName | NPCType | IPosition, options?: {
         getWithin?: number;
         useBlink?: boolean;
-    }): Promise<NodeData> {
+    }): Promise<NodeData | void> {
         if(typeof to !== "string")
             this.destination = to;
         return this.character.smartMove(to, options)
+            .then(undefined, () => {})
+            .catch(() => {})
             .finally(() => this.destination = undefined);
     }
 }

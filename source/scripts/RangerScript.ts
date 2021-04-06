@@ -67,9 +67,6 @@ export class RangerScript extends ScriptBase<Ranger> {
 
             //if we didnt already 3shot, see if we can 3shot weak stuff
             if (!used) {
-                let nearbyPriest = this.players
-                    .values
-                    .firstOrDefault(player => player.ctype === "priest" && player.party === this.character.party); 
                 let possibleTargets = this.entities
                     .values
                     .where(entity => entity != null && this.withinRange(entity))
@@ -83,12 +80,8 @@ export class RangerScript extends ScriptBase<Ranger> {
                     .take(3)
                     .toArray();
                 
-                let acceptableDamage = 400;
-
-                if(nearbyPriest)
-                    acceptableDamage = (nearbyPriest.attack * nearbyPriest.frequency);
-
-                if (targets.length >= 3 && this.calculatePotentialDamage(targets) <= acceptableDamage)
+                let acceptableDamage = this.incomingHPS;
+                if (targets.length >= 3 && this.calculatePotentialDamage(targets) <= acceptableDamage && (targets[0].hp < this.character.attack * 2))
                     //prioritize things already attacking us
                     await this.character.threeShot(targets[0].id, targets[1].id, targets[2].id);
             }
