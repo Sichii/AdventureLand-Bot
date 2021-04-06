@@ -1,48 +1,61 @@
-import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType } from "../internal";
+import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType, PartyMemberSettings } from "../internal";
 
 export class SETTINGS {
     //#region Attack
-    static ATTACK_MTYPES = new List<MonsterName>([
-        "mole"//"bat", <MonsterName>"vbat"
-    ]);
     static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr", "jr", "mvampire", "goldenbat", "phoenix" ]);
     //#endregion
 
     //#region Party
-    static PARTY_INFO = new Dictionary<string, { class: string, elixir: ItemName }>(new Map<string, { class: string, elixir: ItemName }>(
+    static PARTY_SETTINGS = new Dictionary<string, PartyMemberSettings>(new Map<string, PartyMemberSettings>(
         [
             ["sichi",
                 {
                     "class": "merchant",
-                    "elixir": "bunnyelixir"
+                    "elixir": "bunnyelixir",
                 }], ["makiz",
                 {
                     "class": "warrior",
-                    "elixir": "bunnyelixir"
+                    "elixir": "bunnyelixir",
+                    "attackMTypes": new List([
+                        "bat"
+                    ]),
+                    "map": "cave"
                 }], ["ragnah",
                 {
                     "class": "priest",
-                    "elixir": "bunnyelixir"
+                    "elixir": "bunnyelixir",
+                    "attackMTypes": new List([
+                        "bat"
+                    ]),
+                    "map": "cave"
                 }], ["dreamweaver",
                 {
                     "class": "ranger",
-                    "elixir": "bunnyelixir"
+                    "elixir": "bunnyelixir",
+                    "attackMTypes": new List([
+                        "bat"
+                    ]),
+                    "map": "cave"
                 }]
         ]));
 
-    static LEADER_NAME = "makiz";
-    static MERCHANT_NAME = "sichi";
+    static get MERCHANT_NAME() {
+        let merchantSettings = this.PARTY_SETTINGS
+            .where(([name, settings]) => settings.class === "merchant")
+            .firstOrDefault();
+
+        return merchantSettings![0];
+    }
     static MERCHANT_STAND_LOCATION = new Location(new Point(-130, -100), "main");
     //#endregion
 
     //#region Thresholds
-    static FOLLOW_DISTANCE = 100;
     static MERCHANT_GOLD_TO_HOLD = 50000000;
     static MERCHANT_MIN_GOLD = 10000000;
     static MERCHANT_VISIT_PARTY_EVERY = 1000 * 60 * 15; //15mins
     static PRIEST_HEAL_AT = 0.75;
-    static HP_POT_AT = 0.333;
-    static MP_POT_AT = 0.666;
+    static HP_POT_AT = 0.5;
+    static MP_POT_AT = 0.75;
     static POTION_THRESHOLD = 3000;
     static SCROLLS_THRESHOLD = 50;
     static MAX_COMPOUND_LEVEL = 3;
@@ -70,7 +83,7 @@ export class SETTINGS {
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
         //"ctristone", "vitring"
-        "wbook0",
+        "wbook0", "ctristone"
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([

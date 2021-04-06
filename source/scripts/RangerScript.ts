@@ -44,10 +44,10 @@ export class RangerScript extends ScriptBase<Ranger> {
     }
 
     async offenseAsync() {
-        let target = this.selectTarget(false);
-        let leader = this.hiveMind.leader;
+        let target = this.target;
+        let leader = this.leader;
 
-        if (target == null || !this.hiveMind.readyToGo)
+        if (target == null)
             return false;
 
         if (this.character.canUse("3shot")) {
@@ -56,7 +56,8 @@ export class RangerScript extends ScriptBase<Ranger> {
             if (leader != null) {
                 let possibleTargets = this.entities
                     .values
-                    .where(entity => entity.target == leader?.character.id)
+                    .where(entity => this.withinRange(entity))
+                    .where(entity => entity != null && entity.target == leader?.character.id)
                     .toArray();
 
                 //3shot stuff hitting the leader
@@ -66,14 +67,22 @@ export class RangerScript extends ScriptBase<Ranger> {
 
             //if we didnt already 3shot, see if we can 3shot weak stuff
             if (!used) {
+                let priestNearby = this.followers.any(script => script?.character.ctype === "priest" && script.withinRange(this.character));
                 let possibleTargets = this.entities
                     .values
-                    .where(entity => entity.hp <= this.character.attack * 2)
+                    .where(entity => entity != null && this.withinRange(entity) && (entity.hp <= this.character.attack * 2 || priestNearby || entity.attack * 3 <= 300))
                     .orderBy(entity => this.distance(entity))
+                    .toList();
+                let alreadyTargetingUs = possibleTargets
+                    .where(entity => entity.target === this.character.id)
+                    .toList();
+                let targets = alreadyTargetingUs.concat(possibleTargets
+                    .except(alreadyTargetingUs))
                     .toArray();
-
-                if (possibleTargets.length >= 3)
-                    await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id)
+                
+                if (targets.length >= 3)
+                    //prioritize things already attacking us
+                    await this.character.threeShot(targets[0].id, targets[1].id, targets[2].id);
             }
         }
 
@@ -93,6 +102,9 @@ export class RangerScript extends ScriptBase<Ranger> {
     }
 
     async handleMovementAsync() {
-        await this.followTheLeaderAsync();
+		if(this.settings.assist)
+			await this.followTheLeaderAsync();
+		else
+			await this.leaderMove();
     }
 }

@@ -25,6 +25,10 @@ export class List<T> extends EnumerableBase<T> {
         }
     }
 
+    find(index: number) {
+        return this.items[index];
+    }
+
     add(item: T) {
         this.items.push(item);
     }
@@ -35,7 +39,7 @@ export class List<T> extends EnumerableBase<T> {
         if(index === -1)
             return false;
 
-        return this.items.splice(index, 1), true;
+        return this.items.splice(index, 1).length > 0;
     }
 
     [Symbol.iterator](): Iterator<T, any, undefined> {

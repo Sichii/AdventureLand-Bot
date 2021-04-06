@@ -34,9 +34,9 @@ export class PriestScript extends ScriptBase<Priest> {
     }
 
     async offenseAsync() {
-        let target = this.selectTarget(false);
+        let target = this.target;
 
-        if (target == null || !this.hiveMind.readyToGo)
+        if (target == null)
             return false;
 
         if(target.hp > this.character.attack * 4 && this.character.canUse("curse") && this.withinRange(target))
@@ -48,10 +48,6 @@ export class PriestScript extends ScriptBase<Priest> {
         }
 
         return false;
-    }
-
-    async handleMovementAsync() {
-        await this.followTheLeaderAsync();
     }
 
     async tryHealPartyAsync() {
@@ -88,5 +84,12 @@ export class PriestScript extends ScriptBase<Priest> {
         }
 
         return false;
+    }
+
+    async handleMovementAsync() {
+        if(this.settings.assist)
+            await this.followTheLeaderAsync();
+        else
+            await this.leaderMove();
     }
 }

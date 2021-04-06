@@ -38,7 +38,7 @@ export class Dictionary<TKey, TValue> extends EnumerableBase<[TKey, TValue]> {
     }
 
     getValue(key: TKey) {
-        return this.items.get(key) ?? null;
+        return this.items.get(key) ?? undefined;
     }
 
     containsKey(key: TKey) {

@@ -1,4 +1,4 @@
-import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, OrderByEnumerableIterator, DefaultComparer, IEqualityComparer } from "../internal";
+import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, DefaultComparer, IEqualityComparer } from "../internal";
 
 export abstract class EnumerableBase<T> implements IEnumerable<T> {
     first(predicate?: (item: T) => boolean) {
@@ -25,9 +25,9 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         return true;
     }
 
-    any(predicate: (item: T) => boolean) {
+    any(predicate?: (item: T) => boolean) {
         for(let item of this)
-            if(predicate(item))
+            if(predicate?.(item) ?? true)
                 return true;
 
         return false;
@@ -152,6 +152,33 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
             yield item;
     }
 
+    except(items: Iterable<T>) : IEnumerable<T> {
+        return new DefaultEnumerableIterator(this.exceptIterator(items));
+    }
+
+    private *exceptIterator(items: Iterable<T>) {
+        let set = new Set<T>();
+
+        for(let item of this)
+            set.add(item);
+
+        for(let item of items)
+            if(!set.has(item))
+                yield item;
+    }
+
+    intersect(items: Iterable<T>): IEnumerable<T> {
+        return new DefaultEnumerableIterator(this.exceptIterator(items));
+    }
+
+    private *intersectIterator(items: Iterable<T>) {
+        let set = new Set(this);
+
+        for(let item of items)
+            if(set.has(item))
+                yield item;
+    }
+
     reverse() {
         return new DefaultEnumerableIterator(this.reverseIterator());
     }
@@ -164,11 +191,45 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
     }
 
     orderBy(selector: (item: T) => number): IEnumerable<T> {
-        return new OrderByEnumerableIterator(this, selector);
+        return new DefaultEnumerableIterator(this.orderByIterator(selector));
+    }
+
+    private *orderByIterator(selector: (item: T) => number) {
+        let arr = this.toArray();
+        let values = new Array<number>();
+        let keys = new Array<number>();
+
+        for(let index in arr) {
+            let item = arr[index];
+            values.push(selector(item));
+            keys.push(+index);
+        }
+
+        keys.sort((item1, item2) => values[item1] - values[item2]);
+
+        for(let key of keys)
+            yield arr[key];
     }
 
     orderByDesc(selector: (item: T) => number): IEnumerable<T> {
-        return this.orderBy(selector).reverse();
+        return new DefaultEnumerableIterator(this.orderByDescIterator(selector));
+    }
+
+    private *orderByDescIterator(selector: (item: T) => number) {
+        let arr = this.toArray();
+        let values = new Array<number>();
+        let keys = new Array<number>();
+
+        for(let index in arr) {
+            let item = arr[index];
+            values.push(selector(item));
+            keys.push(+index);
+        }
+
+        keys.sort((item1, item2) => values[item2] - values[item1]);
+
+        for(let key of keys)
+            yield arr[key];
     }
 
     abstract [Symbol.iterator](): Iterator<T>;

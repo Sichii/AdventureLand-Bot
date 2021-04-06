@@ -37,17 +37,21 @@ export class MerchantScript extends ScriptBase<Merchant> {
         }
 
         if (this.visitParty === true) {
-            let leader = this.hiveMind.leader;
+            let visitedMembers = this.hiveMind
+                .values
+                .where(mind => mind.character != null && this !== mind)
+                .toList();
 
-            if (leader == null)
-                return;
-
-            await this.smartMove(leader.character, { getWithin: 150 });
-
-            if (this.distance(leader.character) < 200) {
-                await this.tradeWithPartyAsync();
-                this.visitParty = false;
+            while(visitedMembers.any())
+            {
+                let targetScript = visitedMembers.elementAt(0)!;
+                await this.pathToCharacter(targetScript, 150);
+                await this.tradeWithPartyAsync()
+                    .catch(() => {});
+                visitedMembers.remove(targetScript);
             }
+
+            this.visitParty = false;
         } else if (false) {
             //TODO: add dismantle logic
         } else if (this.shouldGoToBank()) {
@@ -117,7 +121,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
     async tradeWithPartyAsync() {
         let minds = this.hiveMind
-            .where(([key, value]) => value.isConnected && key !== this.character.name)
+            .where(([key, value]) => value.isConnected && key !== this.character.name && this.withinRange(value.character, 300))
             .select(([, value]) => value);
 
         for (let theirMind of minds) {

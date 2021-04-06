@@ -16,7 +16,6 @@ export class WarriorScript extends ScriptBase<Warrior> {
 	}
 
 	execute() {
-		this.loopAsync(() => this.lootAsync(), 1000 * 2);
 		this.loopAsync(() => this.mainAsync(), 1000 / 30);
 		this.loopAsync(() => this.handleMovementAsync(), 1000 / 10, false, true);
 	}
@@ -32,43 +31,10 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		return;
 	}
 
-	async lootAsync() {
-		if (this.character.rip || this.character.chests.size == 0)
-			return;
-
-		let midasSlot = this.character.locateItem("handofmidas",);
-		let merchant = this.hiveMind.getValue(SETTINGS.MERCHANT_NAME);
-		let midasEquipped = false;
-		//equip handofmidas only when merchant isnt nearby
-		if (midasSlot != null && (merchant == null || !this.canSee(merchant.character))) {
-			midasEquipped = true;
-			await this.character.equip(midasSlot)
-				.catch(() => { });
-		}
-
-		try {
-			let index = 0;
-			for (let [id, chest] of this.character.chests) {
-				if (this.distance(chest) < 100) {
-					await this.character.openChest(id);
-					index++;
-				}
-
-				if (index >= 10)
-					break;
-			}
-		} finally {
-			//equip whatever gloves we had on before handofmidas
-			if (midasEquipped)
-				await this.character.equip(midasSlot)
-					.catch(() => { });
-		}
-	}
-
 	async defenseAsync() {
 		if (this.character.canUse("hardshell") && !this.character.s.fingered) {
 			if (this.hpPct < (SETTINGS.PRIEST_HEAL_AT / 2)) {
-				let target = this.selectTarget(false);
+				let target = this.target;
 
 				if (target != null && target.damage_type === "physical")
 					await this.character.hardshell();
@@ -79,7 +45,8 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			for (let [id, entity] of this.character.entities) {
 				//TODO: what is taunt's range? seems to only be using it point blank
 				if (entity != null && entity.target != this.character.id && entity.isAttackingPartyMember(this.character) && this.withinSkillRange(entity, "taunt")) {
-					await this.character.taunt(id);
+					await this.character.taunt(id)
+						.catch(() => {});
 					return true;
 				}
 			}
@@ -92,9 +59,9 @@ export class WarriorScript extends ScriptBase<Warrior> {
 	}
 
 	async offenseAsync() {
-		let target = this.selectTarget(true);
+		let target = this.target;
 
-		if (target == null || !this.hiveMind.readyToGo)
+		if (target == null)
 			return false;
 
 		//need to be careful about using this, can kill ourselves pretty easily
@@ -130,22 +97,24 @@ export class WarriorScript extends ScriptBase<Warrior> {
 						expectedIncommingDps *= 2;
 
 					let pierce = sample.apiercing ?? 0;
-					expectedIncommingDps *= Utility.calculateDamageMultiplier(this.character.armor - pierce);
+					expectedIncommingDps *= Utility.calculateDamageMultiplier(armor - pierce);
 				} else {
 					//TODO: replace '2' with actual mcourage
 					if (entitiesInRange.length > 2)
 						expectedIncommingDps *= 2;
 
 					let pierce = sample.rpiercing ?? 0;
-					expectedIncommingDps *= Utility.calculateDamageMultiplier(this.character.resistance - pierce);
+					expectedIncommingDps *= Utility.calculateDamageMultiplier(resistance - pierce);
 				}
 
 				//calculate the amount of hps we should expect to receive from the priest
-				let priest = this.hiveMind.values.firstOrDefault(mind => mind.character.ctype === "priest")
+				let priest = this.followers.firstOrDefault(script => script?.character.ctype === "priest");
 				let possibleHps = 0;
 
 				if (priest != null)
 					possibleHps += (priest.character.level * 2.5) + (priest.character.attack * priest.character.frequency);
+				else
+					possibleHps = 300;
 
 				//if we expect more hps than incomming dps, we can cleave
 				//or everything in range is already targeting me
@@ -163,60 +132,10 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		return false;
 	}
 
-	async handleMovementAsync() {
-		if (this.character.rip)
-			return;
-
-		let target = this.selectTarget(false);
-
-		if (target != null) {
-			let distance = this.location.distance(target);
-
-			if (distance < this.character.range * 0.75)
-				return;
-			else {
-				let entityLocation = Location.fromIPosition(target);
-
-				if (Pathfinder.canWalkPath(this.location, entityLocation)) {
-					let walkTo = entityLocation.point.offsetByAngle(target.angle, this.character.range / 2);
-					let lerped = this.point.lerp(walkTo, this.character.speed, this.character.range);
-
-					await this.character.move(lerped.x, lerped.y, true)
-						.catch(() => { });
-				} else {
-					await this.smartMove(entityLocation, { getWithin: this.character.range });
-				}
-			}
-		} else {
-			let hasTarget = await PromiseExt.pollWithTimeoutAsync(async () => this.selectTarget(true) != null, 1000);
-
-			if (!hasTarget) {
-				//if we dont have a target within a reasonable amount of time, pick a new random spawnpoint for the monster we're after
-				let possibleSpawns = new List(Game.G.maps[this.character.map].monsters)
-					.where(monster => monster.type === SETTINGS.ATTACK_MTYPES.first())
-					.toList();
-
-				if(possibleSpawns.length == 0) {
-					//no possible spawns on this map, so we're probably not on the right map
-					await this.smartMove(SETTINGS.ATTACK_MTYPES.first());
-					return;
-				}
-
-				let goTo = possibleSpawns
-					.where(spawn => spawn.boundary != null)
-					.select(spawn => {
-						let point1 = new Point(spawn.boundary![0], spawn.boundary![1]);
-						let point2 = new Point(spawn.boundary![2], spawn.boundary![3]);
-						let midPoint = Utility.midPoint(point1, point2);
-
-						return midPoint;
-					})
-					.orderBy(() => Math.random())
-					.firstOrDefault();
-
-				if (goTo)
-					await this.smartMove(new Location(goTo, this.character.map), { getWithin: 300 });
-			}
-		}
+	async handleMovementAsync(){
+		if(this.settings.assist)
+			await this.followTheLeaderAsync();
+		else
+			await this.leaderMove();
 	}
 }

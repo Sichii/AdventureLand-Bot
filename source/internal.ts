@@ -35,6 +35,7 @@ export * from "./objects/Deferred";
 export * from "./objects/KindBase";
 export * from "./objects/Point";
 export * from "./objects/Location";
+export * from "./objects/PartyMemberSettings";
 
 export * from "./definitions/Utility";
 

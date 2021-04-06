@@ -1,10 +1,10 @@
 import chalk from "chalk";
-import { SETTINGS, Logger, LogLevel, MerchantScript, PingCompensatedScript } from "../internal";
+import { SETTINGS, Logger, LogLevel, MerchantScript, PingCompensatedScript, PingCompensatedCharacter, ScriptBase } from "../internal";
 
 export class CommandManager {
-    script: PingCompensatedScript;
+    script: ScriptBase<PingCompensatedCharacter>;
 
-    constructor(script: PingCompensatedScript) {
+    constructor(script: ScriptBase<PingCompensatedCharacter>) {
         this.script = script;
     }
 

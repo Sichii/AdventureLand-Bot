@@ -1,8 +1,7 @@
-import { Entity } from "alclient/build/Entity";
-import { Dictionary, PingCompensatedScript, PromiseExt, SETTINGS } from "../internal";
+import { Dictionary, ScriptBase, PromiseExt, SETTINGS, PingCompensatedCharacter, Entity } from "../internal";
 
-export class HiveMind extends Dictionary<string, PingCompensatedScript> {
-    targetId?: string;
+export class HiveMind extends Dictionary<string, ScriptBase<PingCompensatedCharacter>> {
+    boss?: Entity;
 
     constructor() {
         super();
@@ -10,39 +9,13 @@ export class HiveMind extends Dictionary<string, PingCompensatedScript> {
         PromiseExt.setIntervalAsync(() => this.managePartyAsync(), 5000);
     }
 
-    get leader() {
-        return this.getValue(SETTINGS.LEADER_NAME);
-    }
-    
-    get readyToGo() {
-        let leader = this.leader;
-
-        if(leader == null || !leader.isConnected)
-            return false;
-
-        return SETTINGS.PARTY_INFO
-            .keys
-            .where(memberName => memberName !== SETTINGS.MERCHANT_NAME)
-            .all(memberName => {
-            let mind = this.getValue(memberName);
-
-            if(mind == null)
-                return false;
-
-            if(leader != null && mind.distance(leader.character) > Math.max(mind.character.range * 1.25, 150))
-                return false;
-
-            return true;
-        });
-    }
-
     async managePartyAsync() {
-        let leaderScript = this.leader;
+        let merchant = this.getValue(SETTINGS.MERCHANT_NAME);
 
-        if (!leaderScript)
+        if (!merchant)
             return;
 
-        let leader = leaderScript.character;
+        let leader = merchant.character;
         let members = this.values
             .select(script => script.character)
             .where(character => character.id !== leader.id && character.party !== leader.name);
