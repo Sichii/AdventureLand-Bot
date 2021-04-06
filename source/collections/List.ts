@@ -42,6 +42,10 @@ export class List<T> extends EnumerableBase<T> {
         return this.items.splice(index, 1).length > 0;
     }
 
+    toArray() {
+        return this.items;
+    }
+
     [Symbol.iterator](): Iterator<T, any, undefined> {
         return this.getEnumerator();
     }

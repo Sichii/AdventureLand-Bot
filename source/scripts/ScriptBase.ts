@@ -47,9 +47,9 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         this.hiveMind = hiveMind;
         this.hiveMind.addOrSet(character.name, this);
 
-        if(this.character.ctype !== "merchant") {
+        if (this.character.ctype !== "merchant") {
             this.loopAsync(() => this.lootAsync(), 1000 * 2);
-            this.loopAsync(async () => this.selectTarget(), 1000/30);
+            this.loopAsync(async () => this.selectTarget(), 1000 / 30);
         }
 
         this.character.socket.on("code_eval", (data: string) => this.commandManager.handleCommand(data));
@@ -65,7 +65,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             await PromiseExt.delay(timeSinceLastConnect);
 
         await this.character.connect()
-            .catch(() => {});
+            .catch(() => { });
         this.character.socket.on("code_eval", (data: string) => this.commandManager.handleCommand(data));
         this.character.socket.on("disconnect", () => this.reconnect());
     }
@@ -112,30 +112,30 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             return;
         }
 
-        if(this.settings.assist != null) {
+        if (this.settings.assist != null) {
             let leader = this.leader;
 
-            if(leader == null)
+            if (leader == null)
                 return;
 
             this.target = leader.target;
         } else {
-            if(!this.readyToGo)
+            if (!this.readyToGo)
                 return;
 
-            if(this.target != null) {
+            if (this.target != null) {
                 let boss = this.hiveMind.boss;
                 let currentTarget = this.entities
                     .values
                     .firstOrDefault(entity => entity.id === this.target!.id);
 
                 //if we're targeting the boss and we either cant see where it's supposed to be, or it is in or entity list
-                if(boss != null && (!this.canSee(boss) || currentTarget != null))
+                if (boss != null && (!this.canSee(boss) || currentTarget != null))
                     return setTarget(boss);
-                else if(boss != null && this.canSee(boss) && currentTarget == null)
+                else if (boss != null && this.canSee(boss) && currentTarget == null)
                     this.hiveMind.boss = undefined;
 
-                if(currentTarget != null)
+                if (currentTarget != null)
                     return setTarget(currentTarget);
             }
 
@@ -309,23 +309,65 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     }
 
     async pathToCharacter(script: ScriptBase<PingCompensatedCharacter>, distance: number) {
-        while(true)
-        {
+        while (true) {
             let startingLocation = Location.fromIPosition(script.character);
             let deferred = new Deferred();
             this.smartMove(script.character, { getWithin: distance })
-                .catch(() => {})
+                .catch(() => { })
                 .finally(() => deferred.resolve());
 
-            while(!deferred.isResolved()) {
-                if(startingLocation.distance(script.character) > distance * 2)
+            while (!deferred.isResolved()) {
+                if (startingLocation.distance(script.character) > distance * 2)
                     break;
                 else
                     await PromiseExt.delay(100);
             }
 
-            if(this.distance(script.character) < distance + 50)
+            if (this.distance(script.character) < distance + 50)
                 break;
         }
+    }
+
+    calculatePotentialDamage(possibleTargets: Entity[]) {
+        let targets = new List(possibleTargets);
+
+        if(!targets.any())
+            return 0;
+
+        let expectedIncommingDps = targets
+            .sumBy(entity => entity.attack * entity.frequency)!;
+        let sample = targets.find(0);
+        let damageType = sample.damage_type;
+
+        if (sample.type === "pppompom" || sample.type === "fireroamer")
+            expectedIncommingDps += (targets.length * 600);
+
+        let armor = this.character.armor + (this.character.level * 2.5);
+        let resistance = this.character.resistance;
+
+        if (this.character.s.hardshell)
+            armor -= Game.G.conditions.hardshell.armor!;
+        if (this.character.s.fingered)
+            resistance -= Game.G.conditions.fingered.resistance!;
+
+        //calculate how much dps we expect to take if we cleave
+        if (damageType === "physical") {
+            if (targets.length > this.character.courage)
+                expectedIncommingDps *= 2;
+
+            let pierce = sample.apiercing ?? 0;
+            expectedIncommingDps *= Utility.calculateDamageMultiplier(armor - pierce);
+        } else if(damageType === "magical") {
+            if (targets.length > this.character.mcourage)
+                expectedIncommingDps *= 2;
+
+            let pierce = sample.rpiercing ?? 0;
+            expectedIncommingDps *= Utility.calculateDamageMultiplier(resistance - pierce);
+        } else {
+            if (targets.length > this.character.pcourage)
+            expectedIncommingDps *= 2;
+        }
+
+        return expectedIncommingDps;
     }
 }

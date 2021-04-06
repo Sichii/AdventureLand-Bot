@@ -157,12 +157,9 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
     }
 
     private *exceptIterator(items: Iterable<T>) {
-        let set = new Set<T>();
+        let set = new Set<T>(items);
 
         for(let item of this)
-            set.add(item);
-
-        for(let item of items)
             if(!set.has(item))
                 yield item;
     }
@@ -176,6 +173,28 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
 
         for(let item of items)
             if(set.has(item))
+                yield item;
+    }
+
+    take(count: number): IEnumerable<T> {
+        return new DefaultEnumerableIterator(this.takeIterator(count));
+    }
+
+    private *takeIterator(count: number) {
+        let index = 0;
+        for(let item of this)
+            if(index++ < count)
+                yield item;
+    }
+
+    skip(count: number): IEnumerable<T> {
+        return new DefaultEnumerableIterator(this.skipIterator(count));
+    }
+
+    private *skipIterator(count: number) {
+        let index = 0;
+        for(let item of this)
+            if(index++ >= count)
                 yield item;
     }
 

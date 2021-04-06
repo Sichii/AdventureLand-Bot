@@ -18,6 +18,8 @@ export interface IEnumerable<T> extends Iterable<T> {
     concat(items: Iterable<T>): IEnumerable<T>;
     except(items: Iterable<T>): IEnumerable<T>;
     intersect(items: Iterable<T>): IEnumerable<T>;
+    take(count: number): IEnumerable<T>;
+    skip(count: number): IEnumerable<T>;
     reverse(): IEnumerable<T>;
 
     //fuck this guy

@@ -1,4 +1,4 @@
-import { SETTINGS, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location, Dictionary } from "../internal";
+import { SETTINGS, Utility, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location, Dictionary } from "../internal";
 
 export class RangerScript extends ScriptBase<Ranger> {
     constructor(character: Ranger, hiveMind: HiveMind) {
@@ -67,10 +67,12 @@ export class RangerScript extends ScriptBase<Ranger> {
 
             //if we didnt already 3shot, see if we can 3shot weak stuff
             if (!used) {
-                let priestNearby = this.followers.any(script => script?.character.ctype === "priest" && script.withinRange(this.character));
+                let nearbyPriest = this.players
+                    .values
+                    .firstOrDefault(player => player.ctype === "priest" && player.party === this.character.party); 
                 let possibleTargets = this.entities
                     .values
-                    .where(entity => entity != null && this.withinRange(entity) && (entity.hp <= this.character.attack * 2 || priestNearby || entity.attack * 3 <= 300))
+                    .where(entity => entity != null && this.withinRange(entity))
                     .orderBy(entity => this.distance(entity))
                     .toList();
                 let alreadyTargetingUs = possibleTargets
@@ -78,9 +80,15 @@ export class RangerScript extends ScriptBase<Ranger> {
                     .toList();
                 let targets = alreadyTargetingUs.concat(possibleTargets
                     .except(alreadyTargetingUs))
+                    .take(3)
                     .toArray();
                 
-                if (targets.length >= 3)
+                let acceptableDamage = 400;
+
+                if(nearbyPriest)
+                    acceptableDamage = (nearbyPriest.attack * nearbyPriest.frequency);
+
+                if (targets.length >= 3 && this.calculatePotentialDamage(targets) <= acceptableDamage)
                     //prioritize things already attacking us
                     await this.character.threeShot(targets[0].id, targets[1].id, targets[2].id);
             }

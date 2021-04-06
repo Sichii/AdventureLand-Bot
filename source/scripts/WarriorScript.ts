@@ -74,38 +74,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 			//only worth cleaving if we're going to hit more stuff
 			if (entitiesInRange.length >= 3) {
-				let expectedIncommingDps = entitiesInRange
-					.sumBy(entity => entity.attack * entity.frequency)!;
-				let sample = entitiesInRange.elementAt(0)!;
-				let damageType = sample.damage_type;
-
-				if (sample.type === "pppompom" || sample.type === "fireroamer")
-					expectedIncommingDps += (entitiesInRange.length * 400);
-
-				let armor = this.character.armor + (this.character.level * 2.5);
-				let resistance = this.character.resistance;
-
-				if (this.character.s.hardshell)
-					armor -= Game.G.conditions.hardshell.armor!;
-				if (this.character.s.fingered)
-					resistance -= Game.G.conditions.fingered.resistance!;
-
-				//calculate how much dps we expect to take if we cleave
-				if (damageType === "physical") {
-					//TODO: replace '11' with actual courage
-					if (entitiesInRange.length > 11)
-						expectedIncommingDps *= 2;
-
-					let pierce = sample.apiercing ?? 0;
-					expectedIncommingDps *= Utility.calculateDamageMultiplier(armor - pierce);
-				} else {
-					//TODO: replace '2' with actual mcourage
-					if (entitiesInRange.length > 2)
-						expectedIncommingDps *= 2;
-
-					let pierce = sample.rpiercing ?? 0;
-					expectedIncommingDps *= Utility.calculateDamageMultiplier(resistance - pierce);
-				}
+				let expectedIncommingDps = this.calculatePotentialDamage(entitiesInRange.toArray());
 
 				//calculate the amount of hps we should expect to receive from the priest
 				let priest = this.followers.firstOrDefault(script => script?.character.ctype === "priest");
