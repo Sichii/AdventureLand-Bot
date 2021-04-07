@@ -11,13 +11,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		character.name = name;
 
 		let script = new WarriorScript(character, hiveMind);
-		script.execute();
 		return script;
-	}
-
-	execute() {
-		this.loopAsync(() => this.mainAsync(), 1000 / 30);
-		this.loopAsync(() => this.handleMovementAsync(), 1000 / 10, false, true);
 	}
 
 	async mainAsync() {
@@ -29,6 +23,13 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			await this.offenseAsync();
 
 		return;
+	}
+
+	async movementAsync(){
+		if(this.settings.assist)
+			await this.followTheLeaderAsync();
+		else
+			await this.leaderMove();
 	}
 
 	async defenseAsync() {
@@ -90,12 +91,5 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		}
 
 		return false;
-	}
-
-	async handleMovementAsync(){
-		if(this.settings.assist)
-			await this.followTheLeaderAsync();
-		else
-			await this.leaderMove();
 	}
 }

@@ -46,6 +46,10 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.character.socket?.connected ?? false;
     }
 
+    get range() {
+        return this.character.range + this.character.xrange;
+    }
+
     constructor(character: PingCompensatedCharacter) {
         super();
         this.Kind.add("ScriptBase");
@@ -57,9 +61,6 @@ export abstract class PingCompensatedScript extends KindBase {
         this.loopAsync(() => this.usePotionRegenAsync(), 1000 / 10);
         this.loopAsync(async () => this.monitorCC(), 1000);
     }
-
-    abstract execute(): void;
-    abstract mainAsync(): Promise<void>
 
     async loopAsync(func: () => Promise<any>, msMinDelay: number, delayStart?: boolean, ignoreSmartMove = false) {
         let wrapperFunc = async () => {
@@ -92,8 +93,6 @@ export abstract class PingCompensatedScript extends KindBase {
             Logger.Error(`[${this.character.name}] cc: ${~~this.character.cc}`);
         else if (this.character.cc > 60)
             Logger.Error(`[${this.character.name}] cc: ${~~this.character.cc}`);
-        else if (this.character.cc > 30)
-            Logger.Warn(`[${this.character.name}] cc: ${~~this.character.cc}`);
 
         return true;
     }
@@ -144,7 +143,7 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.distance(entity) < 600;
     }
 
-    withinRange(entity: Point | IPosition, range = this.character.range) {
+    withinRange(entity: Point | IPosition, range = this.range) {
         let distance = this.distance(entity);
 
         return distance < range;
@@ -163,19 +162,19 @@ export abstract class PingCompensatedScript extends KindBase {
             range = skillInfo.range_multiplier;
 
             if (range)
-                range *= this.character.range;
+                range *= this.range;
             else {
                 range = skillInfo.range_bonus;
 
                 if (range)
-                    range += this.character.range;
+                    range += this.range;
             }
         }
 
         if (range == null)
             return true;
 
-        return this.distance(entity) < (range * 0.95);
+        return this.distance(entity) < range;
     }
 
     smartMove(to: MapName | MonsterName | NPCType | IPosition, options?: {

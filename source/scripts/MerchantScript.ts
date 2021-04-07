@@ -10,6 +10,10 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
         this.wasMoving = true;
         this.visitParty = false;
+
+        this.loopAsync(async () => this.visitParty = true, SETTINGS.MERCHANT_VISIT_PARTY_EVERY, true);
+        //PromiseExt.loopAsync(() => this.buyFromPontyAsync(), 1000 * 60 * 1);
+        this.loopAsync(() => this.luckBuffNearbyAsync(), 1000);
     }
 
     static async startAsync(name: string, region: ServerRegion, id: ServerIdentifier, hiveMind: HiveMind) {
@@ -17,16 +21,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
         character.name = name;
 
         let script = new MerchantScript(character, hiveMind);
-        script.execute();
         return script;
-    }
-
-    async execute() {
-        this.loopAsync(() => this.mainAsync(), 1000);
-        this.loopAsync(() => this.handleStandAsync(), 1000 / 5, false, true);
-        this.loopAsync(async () => this.visitParty = true, SETTINGS.MERCHANT_VISIT_PARTY_EVERY, true);
-        //PromiseExt.loopAsync(() => this.buyFromPontyAsync(), 1000 * 60 * 1);
-        this.loopAsync(() => this.luckBuffNearbyAsync(), 1000);
     }
 
     async mainAsync() {
@@ -83,17 +78,11 @@ export class MerchantScript extends ScriptBase<Merchant> {
         }
     }
 
-    async handleStandAsync() {
-        let moving = this.character.moving;
-
-        if (moving != this.wasMoving) {
-            if (moving)
-                await this.character.closeMerchantStand();
-            else
-                await this.character.openMerchantStand();
-
-            this.wasMoving = moving;
-        }
+    async movementAsync() {
+        if(this.character.stand && this.character.moving)
+            await this.character.closeMerchantStand();
+        else if(!this.character.stand && !this.character.moving)
+            await this.character.openMerchantStand();
     }
 
     async luckBuffNearbyAsync() {

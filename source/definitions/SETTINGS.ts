@@ -2,7 +2,11 @@ import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType, Par
 
 export class SETTINGS {
     //#region Attack
-    static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr", "jr", "mvampire", "goldenbat", "phoenix" ]);
+    static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr", "jr", "mvampire", "goldenbat", "phoenix"]);
+    //#endregion
+
+    //#region Movement
+    static CIRCULAR_KITE_DEGREE_INTERVAL = 30;
     //#endregion
 
     //#region Party
@@ -10,36 +14,51 @@ export class SETTINGS {
         [
             ["sichi",
                 {
-                    "class": "merchant",
-                    "elixir": "bunnyelixir",
-                }], ["makiz",
+                    class: "merchant",
+                    elixir: "bunnyelixir",
+                    mainInterval: 1000,
+                    movementInterval: 1000 / 10
+                }
+            ],
+            ["makiz",
                 {
-                    "class": "warrior",
-                    "elixir": "bunnyelixir",
-                    "kite": false,
-                    "attackMTypes": new List([
+                    class: "warrior",
+                    elixir: "bunnyelixir",
+                    mainInterval: 1000 / 30,
+                    movementInterval: 1000 / 10,
+                    kite: false,
+                    attackMTypes: new List([
                         "bat"
                     ]),
-                    "map": "cave"
-                }], ["ragnah",
+                    map: "cave"
+                }
+            ],
+            ["ragnah",
                 {
-                    "class": "priest",
-                    "elixir": "bunnyelixir",
-                    "kite": true,
-                    "attackMTypes": new List([
+                    class: "priest",
+                    elixir: "bunnyelixir",
+                    mainInterval: 1000 / 30,
+                    movementInterval: 1000 / 10,
+                    kite: true,
+                    attackMTypes: new List([
                         "bat"
                     ]),
-                    "map": "cave"
-                }], ["dreamweaver",
+                    map: "cave"
+                }
+            ],
+            ["dreamweaver",
                 {
-                    "class": "ranger",
-                    "elixir": "bunnyelixir",
-                    "kite": true,
-                    "attackMTypes": new List([
+                    class: "ranger",
+                    elixir: "bunnyelixir",
+                    mainInterval: 1000 / 30,
+                    movementInterval: 1000 / 10,
+                    kite: true,
+                    attackMTypes: new List([
                         "bat"
                     ]),
-                    "map": "cave"
-                }]
+                    map: "cave"
+                }
+            ]
         ]));
 
     static get MERCHANT_NAME() {
@@ -91,7 +110,7 @@ export class SETTINGS {
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
         "handofmidas", "firestaff", "mcape", "quiver",
-        "fireblade", "froststaff", "t2bow", 
+        "fireblade", "froststaff", "t2bow",
         "eslippers", "ecape", "oozingterror", "harbringer", "bataxe",
         "throwingstars", "basher", "crossbow",
     ]);
@@ -100,7 +119,7 @@ export class SETTINGS {
         "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3",
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "snakeoil",
         "bunnyelixir", "mbelt", "rabbitsfoot", "goldenegg",
-        "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine", 
+        "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine",
         "suckerpunch", "fury", "starkillers"
     ]);
 
@@ -109,14 +128,14 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_BUY_FROM_PONTY = new List<ItemName>([
-        "dexring", 
+        "dexring",
         "intearring", "dexearring", "strearring",
         "mbelt",
         "fireblade", "froststaff", "t2bow",
     ]);
 
     static ITEMS_TO_SELL = new List<ItemName>([
-        "epyjamas", "eears", "pinkie", "carrotsword", 
+        "epyjamas", "eears", "pinkie", "carrotsword",
         "hpbelt", "hpamulet", "ringsj", "crabclaw",
         "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
         "intamulet", "dexamulet", "stramulet",

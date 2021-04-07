@@ -11,13 +11,7 @@ export class RangerScript extends ScriptBase<Ranger> {
         character.name = name;
 
         let script = new RangerScript(character, hiveMind);
-        script.execute();
         return script;
-    }
-
-    execute() {
-        this.loopAsync(() => this.mainAsync(), 1000 / 30);
-        this.loopAsync(() => this.handleMovementAsync(), 1000 / 10, false, true);
     }
 
     async mainAsync() {
@@ -26,6 +20,13 @@ export class RangerScript extends ScriptBase<Ranger> {
             await PromiseExt.delay(2500);
         } else if (await this.defenseAsync())
             await this.offenseAsync();
+    }
+
+    async movementAsync() {
+		if(this.settings.assist)
+			await this.followTheLeaderAsync();
+		else
+			await this.leaderMove();
     }
 
     async defenseAsync() {
@@ -100,12 +101,5 @@ export class RangerScript extends ScriptBase<Ranger> {
         }
 
         return false;
-    }
-
-    async handleMovementAsync() {
-		if(this.settings.assist)
-			await this.followTheLeaderAsync();
-		else
-			await this.leaderMove();
     }
 }

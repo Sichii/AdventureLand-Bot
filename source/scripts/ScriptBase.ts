@@ -25,7 +25,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
             let follower = this.hiveMind.getValue(name);
 
-            if (follower == null || follower.distance(this.character) > Math.max(follower.character.range * 2, 200))
+            if (follower == null || follower.distance(this.character) > Math.max(follower.range * 2, 200))
                 return false;
         }
 
@@ -70,9 +70,15 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             this.loopAsync(async () => this.selectTarget(), 1000 / 30);
         }
 
+        this.loopAsync(() => this.mainAsync(), this.settings.mainInterval);
+        this.loopAsync(() => this.movementAsync(), this.settings.movementInterval, false, true);
+
         this.character.socket.on("code_eval", (data: string) => this.commandManager.handleCommand(data));
         this.character.socket.on("disconnect", () => this.reconnect());
     }
+
+    abstract mainAsync(): Promise<void>;
+    abstract movementAsync(): Promise<void>;
 
     async reconnect() {
         Logger.Error("Disconnected, attempting to reconnect...");
@@ -226,7 +232,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 .then(undefined, () => {})
                 .catch(() => { });
         else
-            await this.smartMove(location, { getWithin: this.character.range });
+            await this.smartMove(location, { getWithin: this.range });
 
         return Promise.resolve();
     }
@@ -241,15 +247,15 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         if (leader.destination != null) {
             //if we're already there, just wait
-            if (this.distance(leader.destination) < this.character.range)
+            if (this.distance(leader.destination) < this.range)
                 return;
 
-            await this.smartMove(leader.destination, { getWithin: this.character.range });
+            await this.smartMove(leader.destination, { getWithin: this.range });
             return;
         }
 
-        if (!this.withinRange(leader.character, this.character.range * 2)) {
-            await this.pathToCharacter(leader, this.character.range);
+        if (!this.withinRange(leader.character, this.range * 2)) {
+            await this.pathToCharacter(leader, this.range);
             return;
         }
 
@@ -264,9 +270,9 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
 
         if (target != null && Pathfinder.canWalkPath(this.location, target))
-            await this.weightedMoveToEntityAsync(target, this.character.range);
+            await this.weightedMoveToEntityAsync(target, this.range);
         else if (target != null)
-            await this.smartMove(target, { getWithin: this.character.range / 2 })
+            await this.smartMove(target, { getWithin: this.range / 2 })
     }
 
     async leaderMove() {
@@ -276,33 +282,33 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         let target = this.target;
 
         if (target != null) {
-            if(Pathfinder.canWalkPath(this.location, target))
-                if(this.settings.kite && this.character.speed > target.speed && this.character.range > 100 && this.character.range > target.range) {
+            if(Pathfinder.canWalkPath(this.location, target)) {
+                if(this.settings.kite && this.character.speed > target.speed && this.range > 100 && this.range > target.range) {
                     let result = await this.circleKiteAsync();
 
                     if(result !== null)
                         return;
                 }
-                    
+            }
             else
-                return await this.smartMove(target, { getWithin: this.character.range });
+                return await this.smartMove(target, { getWithin: this.range });
 
             let distance = this.location.distance(target);
 
-            if (distance < this.character.range * 0.75)
+            if (distance < this.range * 0.75)
                 return;
             else {
                 let entityLocation = Location.fromIPosition(target);
 
                 if (Pathfinder.canWalkPath(this.location, entityLocation)) {
-                    let walkTo = entityLocation.point.offsetByAngle(target.angle, this.character.range / 2);
-                    let lerped = this.point.lerp(walkTo, this.character.speed, this.character.range);
+                    let walkTo = entityLocation.point.offsetByAngle(target.angle, this.range / 2);
+                    let lerped = this.point.lerp(walkTo, this.character.speed, this.range);
 
                     return await this.character.move(lerped.x, lerped.y, true)
                         .then(undefined, () => {})
                         .catch(() => { });
                 } else
-                    return await this.smartMove(entityLocation, { getWithin: this.character.range });
+                    return await this.smartMove(entityLocation, { getWithin: this.range });
             }
         } else {
             //if we dont get a target within a reasonable amount of time
@@ -344,7 +350,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         if(target == null)
             return;
 
-        let maxRadius = (this.character.range/2) + target.speed;
+        let maxRadius = (this.range/2) + target.speed;
         //get the closest spawn bounds of our target monster
         //get the center point, and smallest dimension of those bounds
         //we will use the center for circleCenter and the smallest dimention / 2 as the radius
@@ -369,11 +375,11 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                             radius: Math.min(Math.min(Math.abs(tlX - brX), Math.abs(tlY - brY)) / 2.1, maxRadius)
                         }
                     })
-                    .where(set => set.radius > this.character.range/3)
+                    .where(set => set.radius > this.range/3)
                     .minBy(set => set.center.distance(target!));
             })
             .where(set => set != null)
-            .where(set => set!.radius > this.character.range/3)
+            .where(set => set!.radius > this.range/3)
             .minBy(set => set!.center.distance(target!));
 
         if(circle == null)
@@ -385,8 +391,8 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         //walk to a point 30 degrees around the circumference of the circle from us
         let walkToPoint: Point | undefined;
         
-        for(let degree = 0; degree < 360; degree += 15) {
-            walkToAngle += 15;
+        for(let degree = 0; degree < 360; degree += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL) {
+            walkToAngle += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL;
 
             if(walkToAngle > 180)
                 walkToAngle -= 360;
@@ -400,18 +406,16 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
 
         if(walkToPoint != null) {
-            let expectedTime = this.distance(walkToPoint)/this.character.speed;
+            //if we kite out of range, just pick a new target
+            if(this.distance(target) > this.range)
+                this.target = undefined;
+
+            let expectedTime = Math.max((this.distance(walkToPoint)/this.character.speed) - this.settings.movementInterval, 0);
             let moveTask = this.character.move(walkToPoint.x, walkToPoint.y, true)
                 .then(undefined, () => {})
                 .catch(() => {});
 
-            //if we kite out of range, just pick a new target
-            if(this.distance(target) > this.character.range) {
-                target = undefined;
-                return;
-            }
-
-            return await PromiseExt.delay(expectedTime * 500);
+            return await PromiseExt.delay(expectedTime * 900);
         }
 
         return null;
