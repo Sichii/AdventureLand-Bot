@@ -156,21 +156,26 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 //if we're targeting the boss and we either cant see where it's supposed to be, or it is in or entity list
                 if (boss != null && (!this.canSee(boss) || currentTarget != null))
                     return setTarget(boss);
+                //otherwise remove the boss if we knows its dead
                 else if (boss != null && this.canSee(boss) && currentTarget == null)
                     this.hiveMind.boss = undefined;
 
-                if (currentTarget != null)
+                if (currentTarget != null && !currentTarget.willBurnToDeath())
                     return setTarget(currentTarget);
             }
 
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
             let attackableTypes = SETTINGS.ATTACKABLE_BOSSES.concat(this.settings.attackMTypes!).toList();
             for (let [, entity] of this.entities) {
-                if (entity == null || !attackableTypes.contains(entity.type, StringComparer.IgnoreCase) || entity.hp <= 0)
+                if (entity == null 
+                    || !attackableTypes.contains(entity.type, StringComparer.IgnoreCase) 
+                    || entity.hp <= 0 
+                    || entity.willBurnToDeath())
                     continue;
 
-                //if it's targeting a party member, target it
-                if (entity.isAttackingPartyMember(this.character) && this.canSee(entity))
+                //if it's targeting a party member and we can see it, 
+                //AND either we're not kiting, or it's in range
+                if (entity.isAttackingPartyMember(this.character) && (!this.settings.kite || this.withinRange(entity)) && this.canSee(entity))
                     return setTarget(entity);
 
                 let entityLocation = Location.fromIPosition(entity);
@@ -210,7 +215,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
     }
 
-    async weightedMoveToEntityAsync(entity: Entity, maxDistance: number) {
+    async weightedMoveToEntityAsync(entity: Entity, maxDistance: number, ignoreMonsters = false) {
         let location = Location.fromIPosition(entity);
 
         let circle = new WeightedCircle(location, maxDistance, maxDistance / 10);
@@ -223,7 +228,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             .where(xPlayer => xPlayer != null && !xPlayer.npc && xPlayer.id !== this.character.id)
             .toList();
 
-        circle.applyWeight(entities, players, this.point);
+        circle.applyWeight(entities, players, this.point, ignoreMonsters);
 
         let bestPoint = circle.orderBy(entry => entry.weight).firstOrDefault(entry => Pathfinder.canWalkPath(entry.location, this.location))?.location;
 
@@ -233,8 +238,6 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 .catch(() => { });
         else
             await this.smartMove(location, { getWithin: this.range });
-
-        return Promise.resolve();
     }
 
     async followTheLeaderAsync() {
@@ -283,23 +286,21 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         if (target != null) {
             if(Pathfinder.canWalkPath(this.location, target)) {
-                if(this.settings.kite && this.character.speed > target.speed && this.range > 100 && this.range > target.range) {
-                    let result = await this.circleKiteAsync();
-
-                    if(result !== null)
+                if(!SETTINGS.ATTACKABLE_BOSSES.contains(target.type) && this.settings.kite && this.character.speed > target.speed && this.range > 100 && this.range > target.range)
+                    if(await this.circleKiteAsync())
                         return;
-                }
             }
             else
                 return await this.smartMove(target, { getWithin: this.range });
 
-            let distance = this.location.distance(target);
+            let distance = this.distance(target);
 
-            if (distance < this.range * 0.75)
+            if (distance < this.range * 0.75 && !this.settings.kite)
                 return;
             else {
+                await this.weightedMoveToEntityAsync(target, this.range, true);
+                /*
                 let entityLocation = Location.fromIPosition(target);
-
                 if (Pathfinder.canWalkPath(this.location, entityLocation)) {
                     let walkTo = entityLocation.point.offsetByAngle(target.angle, this.range / 2);
                     let lerped = this.point.lerp(walkTo, this.character.speed, this.range);
@@ -309,6 +310,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                         .catch(() => { });
                 } else
                     return await this.smartMove(entityLocation, { getWithin: this.range });
+                */
             }
         } else {
             //if we dont get a target within a reasonable amount of time
@@ -348,12 +350,15 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         let target = this.target;
 
         if(target == null)
-            return;
+            return false;
 
+        //we want to generally be in range of whatever we target
+        //we can do bigger circles if the monster is faster
         let maxRadius = (this.range/2) + target.speed;
+
         //get the closest spawn bounds of our target monster
         //get the center point, and smallest dimension of those bounds
-        //we will use the center for circleCenter and the smallest dimention / 2 as the radius
+        //we will use the center for circleCenter and the smallest dimension / 2 as the radius
         let circle = new List(Game.G.maps[this.character.map].monsters)
             .where(monster => monster.type === target?.type)
             .select(monster => {
@@ -372,7 +377,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                     .select(([tlX, tlY, brX, brY]) => { 
                         return { 
                             center: Utility.midPoint(new Point(tlX, tlY), new Point(brX, brY)),
-                            radius: Math.min(Math.min(Math.abs(tlX - brX), Math.abs(tlY - brY)) / 2.1, maxRadius)
+                            radius: Math.min(Math.abs(tlX - brX), Math.abs(tlY - brY)) / 2.1
                         }
                     })
                     .where(set => set.radius > this.range/3)
@@ -383,14 +388,16 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             .minBy(set => set!.center.distance(target!));
 
         if(circle == null)
-            return null;
-
+            return false;
+        
+        //set a max radius so things stay in range longer
+        circle.radius = Math.min(circle.radius, maxRadius);
         let currentAngle = this.point.angularRelationTo(circle.center);
         let walkToAngle = currentAngle;
 
-        //walk to a point 30 degrees around the circumference of the circle from us
+        //walk to a point x degrees around the circumference of the circle from us
         let walkToPoint: Point | undefined;
-        
+
         for(let degree = 0; degree < 360; degree += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL) {
             walkToAngle += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL;
 
@@ -406,7 +413,8 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
 
         if(walkToPoint != null) {
-            //if we kite out of range, just pick a new target
+            //if we kite out of range, pick a new target
+            //this is down here so that we continue circle kiting even if we change target
             if(this.distance(target) > this.range)
                 this.target = undefined;
 
@@ -415,10 +423,11 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 .then(undefined, () => {})
                 .catch(() => {});
 
-            return await PromiseExt.delay(expectedTime * 900);
+            await PromiseExt.delay(expectedTime * 900);
+            return true;
         }
 
-        return null;
+        return false;
     }
 
     async pathToCharacter(script: ScriptBase<PingCompensatedCharacter>, distance: number) {
@@ -441,7 +450,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
     }
 
-    calculatePotentialDamage(possibleTargets: Entity[]) {
+    calculateIncomingDamage(possibleTargets: Iterable<Entity>) {
         let targets = new List(possibleTargets);
 
         if(!targets.any())

@@ -75,7 +75,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 			//only worth cleaving if we're going to hit more stuff
 			if (entitiesInRange.length >= 3) {
-				let expectedIncomingDps = this.calculatePotentialDamage(entitiesInRange.toArray());
+				let expectedIncomingDps = this.calculateIncomingDamage(entitiesInRange.toArray());
 
 				//if we expect more hps than incomming dps, we can cleave
 				//or everything in range is already targeting me

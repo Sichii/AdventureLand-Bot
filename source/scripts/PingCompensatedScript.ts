@@ -177,6 +177,13 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.distance(entity) < range;
     }
 
+    attackVs(entity: Entity) {
+        if(this.character.damage_type === "physical")
+            return this.character.attack * Utility.calculateDamageMultiplier(entity.armor - this.character.apiercing);
+        else
+            return this.character.attack * Utility.calculateDamageMultiplier(entity.resistance - this.character.rpiercing);
+    }
+
     smartMove(to: MapName | MonsterName | NPCType | IPosition, options?: {
         getWithin?: number;
         useBlink?: boolean;

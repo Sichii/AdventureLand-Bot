@@ -209,6 +209,27 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
             yield arr[i];
     }
 
+    groupBy<TKey>(keySelector: (item: T) => TKey) : IEnumerable<[key: TKey, group: IEnumerable<T>]>{
+        return new DefaultEnumerableIterator(this.groupByIterator(keySelector));
+    }
+
+    private *groupByIterator<TKey>(keySelector: (item: T) => TKey) {
+        let keys = new Dictionary<TKey, List<T>>();
+
+        for(let item of this) {
+            let key = keySelector(item);
+
+            let existing = keys.getValue(key);
+            if(existing == null)
+                keys.addOrSet(key, new List([item]));
+            else
+                existing.add(item);
+        }
+
+        for(let kvp of keys)
+            yield kvp;
+    }
+
     orderBy(selector: (item: T) => number): IEnumerable<T> {
         return new DefaultEnumerableIterator(this.orderByIterator(selector));
     }

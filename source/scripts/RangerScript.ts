@@ -1,3 +1,4 @@
+import { List } from "../collections/List";
 import { SETTINGS, Utility, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location, Dictionary } from "../internal";
 
 export class RangerScript extends ScriptBase<Ranger> {
@@ -52,39 +53,51 @@ export class RangerScript extends ScriptBase<Ranger> {
             return false;
 
         if (this.character.canUse("3shot")) {
-            let used = false;
+            let possibleTargets = this.entities
+                .values
+                .where(entity => entity != null 
+                    && this.withinRange(entity) 
+                    && !entity.willBurnToDeath())
+                .orderBy(entity => this.distance(entity))
+                .toList();
 
             if (leader != null) {
-                let possibleTargets = this.entities
-                    .values
-                    .where(entity => this.withinRange(entity))
-                    .where(entity => entity != null && entity.target == leader?.character.id)
+                let targetingLeader = possibleTargets
+                    .where(entity => entity.target === leader?.character.id)
                     .toArray();
 
                 //3shot stuff hitting the leader
-                if (possibleTargets.length >= 3)
-                    used = (await this.character.threeShot(possibleTargets[0].id, possibleTargets[1].id, possibleTargets[2].id), true);
-            }
-
-            //if we didnt already 3shot, see if we can 3shot weak stuff
-            if (!used) {
-                let possibleTargets = this.entities
-                    .values
-                    .where(entity => entity != null && this.withinRange(entity))
-                    .orderBy(entity => this.distance(entity))
-                    .toList();
-                let alreadyTargetingUs = possibleTargets
+                if (targetingLeader.length >= 3)
+                    await this.character.threeShot(targetingLeader[0].id, targetingLeader[1].id, targetingLeader[2].id);
+            } else if(possibleTargets.length >= 3) {
+                let requireCheck = false;
+                //stuff that's attacking us
+                let targets = possibleTargets
                     .where(entity => entity.target === this.character.id)
                     .toList();
-                let targets = alreadyTargetingUs.concat(possibleTargets
-                    .except(alreadyTargetingUs))
-                    .take(3)
-                    .toArray();
+
+                //stuff that's attacking someone else
+                if(targets.length < 3) 
+                    targets.addRange(possibleTargets.where(entity => entity.target != null && entity.target !== this.character.id));
+
+                //everything else
+                if(targets.length < 3) {
+                    targets.addRange(possibleTargets.except(targets));
+                    requireCheck = true;
+                }
+
+                if(targets.length > 3)
+                    targets = targets
+                        .take(3)
+                        .toList();
                 
-                let acceptableDamage = this.incomingHPS;
-                if (targets.length >= 3 && this.calculatePotentialDamage(targets) <= acceptableDamage && (targets[0].hp < this.character.attack * 2))
-                    //prioritize things already attacking us
-                    await this.character.threeShot(targets[0].id, targets[1].id, targets[2].id);
+                //if we're hitting new targets, make sure we can handle it
+                if(!requireCheck 
+                    || (this.calculateIncomingDamage(targets) <= this.incomingHPS 
+                        && (targets.find(0).max_hp < this.character.attack * 2 || targets.all(entity => entity.hp < this.attackVs(entity) * 0.7)))) {
+                    await this.character.threeShot(targets.find(0).id, targets.find(1).id, targets.find(2).id);
+                    return true;
+                }
             }
         }
 

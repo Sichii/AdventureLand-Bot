@@ -12,7 +12,7 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
         this.center = center;
         this.radius = radius;
 
-        stepSize = Math.ceil(stepSize);
+        stepSize = Math.ceil(stepSize * 1.5);
 
         let x1 = Math.ceil((center.x - radius) / stepSize);
         let x2 = Math.floor((center.x + radius) / stepSize);
@@ -32,7 +32,7 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
         }
     }
 
-    applyWeight(entities: List<Entity>, players: List<Player>, weightedCenter: Point) {
+    applyWeight(entities: List<Entity>, players: List<Player>, weightedCenter: Point, ignoreMonsters: boolean) {
         for(let entry of this) {
             let distanceFromCenter = entry.location.point.distance(this.center);
             let distanceToCurrent = entry.location.point.distance(weightedCenter);
@@ -43,17 +43,19 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
             entry.weight += distanceToCurrent ** 2;
             entry.weight += (Math.abs(this.radius / 3) - distanceFromCenter) ** 2;
 
-            for (let entity of entities) {
-                if (entity == null)
-                    continue;
+            if(!ignoreMonsters) {
+                for (let entity of entities) {
+                    if (entity == null)
+                        continue;
 
-                let entityPoint = Point.fromIPosition(entity);
-                let distanceToEntity = entry.location.point.distance(entityPoint);
-                //this is the size of the effect
-                let range = Math.max(((entity.rage ? entity.range : (CONSTANTS.ENTITY_WIDTH)) + (entity.speed) + CONSTANTS.ENTITY_WIDTH) - distanceToEntity, 0);
+                    let entityPoint = Point.fromIPosition(entity);
+                    let distanceToEntity = entry.location.point.distance(entityPoint);
+                    //this is the size of the effect
+                    let range = Math.max(((entity.rage ? entity.range : (CONSTANTS.ENTITY_WIDTH)) + (entity.speed) + CONSTANTS.ENTITY_WIDTH) - distanceToEntity, 0);
 
-                //give this a high initial weight, so even the outer edges will push players around
-                entry.weight += (range + CONSTANTS.ENTITY_WIDTH) ** 3;                    
+                    //give this a high initial weight, so even the outer edges will push players around
+                    entry.weight += (range + CONSTANTS.ENTITY_WIDTH) ** 3;                    
+                }
             }
 
             for (let player of players) {

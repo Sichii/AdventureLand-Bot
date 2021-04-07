@@ -22,7 +22,7 @@ export interface IEnumerable<T> extends Iterable<T> {
     skip(count: number): IEnumerable<T>;
     reverse(): IEnumerable<T>;
 
-    //fuck this guy
+    groupBy<TKey>(keySelector: (item: T) => TKey) : IEnumerable<[key: TKey, group: IEnumerable<T>]>;
     orderBy(selector: (item: T) => number): IEnumerable<T>;
     orderByDesc(selector: (item: T) => number): IEnumerable<T>;
 

@@ -7,7 +7,7 @@ export class List<T> extends EnumerableBase<T> {
         return this.items.length;
     }
 
-    constructor(enumerable: IEnumerable<T>);
+    constructor(enumerable: Iterable<T>);
     constructor(items: Array<T>);
     constructor();
     constructor(...args: Array<any>) {
@@ -20,8 +20,11 @@ export class List<T> extends EnumerableBase<T> {
 
             if(Array.isArray(arg))
                 this.items = arg;
-            else 
-                this.items = (<IEnumerable<T>>arg).toArray();
+            else { //iterable
+                this.items = new Array<T>();
+                for(let item of arg)
+                    this.items.push(item);
+            }
         }
     }
 
@@ -31,6 +34,11 @@ export class List<T> extends EnumerableBase<T> {
 
     add(item: T) {
         this.items.push(item);
+    }
+
+    addRange(items: Iterable<T>) {
+        for(let item of items)
+            this.items.push(item);
     }
 
     remove(item: T) {
