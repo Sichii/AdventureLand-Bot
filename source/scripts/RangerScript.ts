@@ -94,7 +94,7 @@ export class RangerScript extends ScriptBase<Ranger> {
                 //if we're hitting new targets, make sure we can handle it
                 if(!requireCheck 
                     || (this.calculateIncomingDamage(targets) <= this.incomingHPS 
-                        && (targets.find(0).max_hp < this.character.attack * 2 || targets.all(entity => entity.hp < this.attackVs(entity) * 0.7)))) {
+                        && (targets.find(0).max_hp < this.character.attack * 2 || targets.any(entity => entity.hp < this.attackVs(entity) * 0.7)))) {
                     await this.character.threeShot(targets.find(0).id, targets.find(1).id, targets.find(2).id);
                     return true;
                 }
