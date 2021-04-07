@@ -344,7 +344,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         if(target == null)
             return;
 
-        let maxRadius = (this.character.range/2) + this.character.speed - target.speed;
+        let maxRadius = (this.character.range/2) + target.speed;
         //get the closest spawn bounds of our target monster
         //get the center point, and smallest dimension of those bounds
         //we will use the center for circleCenter and the smallest dimention / 2 as the radius
