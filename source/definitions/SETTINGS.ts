@@ -110,21 +110,21 @@ export class SETTINGS {
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
         "handofmidas", "firestaff", "mcape", "quiver",
-        "fireblade", "froststaff", "t2bow",
+        "fireblade", "froststaff", "t2bow", "firebow",
         "eslippers", "ecape", "oozingterror", "harbringer", "bataxe",
         "throwingstars", "basher", "crossbow",
     ]);
 
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
         "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3",
-        "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "snakeoil",
+        "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "elixirfires", "snakeoil",
         "bunnyelixir", "mbelt", "rabbitsfoot", "goldenegg",
         "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine",
         "suckerpunch", "fury", "starkillers"
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
-        "staff"
+        "staff", "bow"
     ]);
 
     static ITEMS_TO_BUY_FROM_PONTY = new List<ItemName>([
@@ -154,7 +154,7 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_CRAFT = new List<ItemName>([
-        "froststaff", "ctristone", "basketofeggs"
+        "froststaff", "ctristone", "basketofeggs", "firebow", "elixirfires"
     ]);
 
     static readonly ITEM_TYPES_TO_KEEP = new List<ItemType>([
