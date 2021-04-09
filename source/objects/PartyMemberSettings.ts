@@ -6,7 +6,6 @@ export interface PartyMemberSettings {
     assist?: string;
     kite?: boolean;
     attackMTypes?: List<MonsterName>;
-    map?: MapName;
     mainInterval: number;
     movementInterval: number;
 }

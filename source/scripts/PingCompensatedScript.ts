@@ -4,7 +4,8 @@ export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
     metricManager: MetricManager;
     lastConnect: Date;
-    destination?: IPosition;
+    destination?: MapName | MonsterName | NPCType | IPosition;
+    target?: Entity;
 
     get items() {
         return new List(this.character.items);
@@ -47,7 +48,11 @@ export abstract class PingCompensatedScript extends KindBase {
     }
 
     get range() {
-        return this.character.range + this.character.xrange;
+        return this.character.range;
+    }
+
+    get isBeingAttacked() {
+        return this.entities.values.any(entity => entity.target === this.character.id && this.distance(entity) <= entity.range);
     }
 
     constructor(character: PingCompensatedCharacter) {
@@ -67,7 +72,7 @@ export abstract class PingCompensatedScript extends KindBase {
             try {
                 if (!this.isConnected)
                     await PromiseExt.delay(5000);
-                else if(this.destination != null && !ignoreSmartMove) {
+                else if(this.destination != null && !ignoreSmartMove && !this.isBeingAttacked) {
                     await PromiseExt.delay(250);
                 }
                 else {
@@ -139,7 +144,7 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.location.distance(entity);
     }
 
-    canSee(entity: Point | IPosition) {
+    shouldSee(entity: Point | IPosition) {
         return this.distance(entity) < 600;
     }
 
@@ -188,8 +193,12 @@ export abstract class PingCompensatedScript extends KindBase {
         getWithin?: number;
         useBlink?: boolean;
     }): Promise<NodeData | void> {
-        if(typeof to !== "string")
-            this.destination = to;
+        this.destination = to;
+
+        //safety margin
+        if(options?.getWithin != null)
+            options.getWithin *= 0.95;
+
         return this.character.smartMove(to, options)
             .then(undefined, () => {})
             .catch(() => {})

@@ -4,7 +4,6 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     character: T;
     hiveMind: HiveMind;
     commandManager: CommandManager;
-    target?: Entity;
 
     get settings() {
         return SETTINGS.PARTY_SETTINGS.getValue(this.character.name)!;
@@ -104,7 +103,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             let merchant = this.hiveMind.getValue(SETTINGS.MERCHANT_NAME);
             let midasEquipped = false;
             //equip handofmidas only when merchant isnt nearby
-            if (midasSlot != null && (merchant == null || !this.canSee(merchant.character))) {
+            if (midasSlot != null && (merchant == null || !this.shouldSee(merchant.character))) {
                 await this.character.equip(midasSlot)
                     .finally(() => midasEquipped = this.character.slots.gloves.name === "handofmidas");
             }
@@ -147,35 +146,54 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             if (!this.readyToGo)
                 return;
 
+            let beingAttacked = this.isBeingAttacked;
             if (this.target != null) {
                 let boss = this.hiveMind.boss;
                 let currentTarget = this.entities
                     .values
                     .firstOrDefault(entity => entity.id === this.target!.id);
 
-                //if we're targeting the boss and we either cant see where it's supposed to be, or it is in or entity list
-                if (boss != null && (!this.canSee(boss) || currentTarget != null))
-                    return setTarget(boss);
-                //otherwise remove the boss if we knows its dead
-                else if (boss != null && this.canSee(boss) && currentTarget == null)
-                    this.hiveMind.boss = undefined;
+                //if we can see our target
+                if(currentTarget != null) {
+                    //if we're targeting the boss
+                    if(boss != null && boss.id === currentTarget.id)
+                        return setTarget(boss);
 
-                if (currentTarget != null && !currentTarget.willBurnToDeath())
-                    return setTarget(currentTarget);
-            }
+                    //if it wont burn to death, keep attacking it
+                    if(!currentTarget.willBurnToDeath())
+                        return setTarget(currentTarget);
+
+                    return setTarget(undefined);
+                } else { //we cant see our target
+                    //we should be attacking the boss
+                    if(boss != null) {
+                        //we should see the boss but we dont
+                        if(this.shouldSee(boss)) {
+                            this.hiveMind.boss = undefined;
+                            this.target = undefined;
+                        } else 
+                            return setTarget(boss);
+                    }
+
+                    //we cant see our target
+                    return setTarget(undefined);
+                }
+            //if we dont have a target, we should be attacking a boss, and we arent being attacked by something else
+            } else if(this.hiveMind.boss != null && !beingAttacked)
+                return setTarget(this.hiveMind.boss);
 
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
             let attackableTypes = SETTINGS.ATTACKABLE_BOSSES.concat(this.settings.attackMTypes!).toList();
             for (let [, entity] of this.entities) {
                 if (entity == null 
                     || !attackableTypes.contains(entity.type, StringComparer.IgnoreCase) 
-                    || entity.hp <= 0 
+                    || (entity.hp <= 0) 
                     || entity.willBurnToDeath())
                     continue;
 
                 //if it's targeting a party member and we can see it, 
                 //AND either we're not kiting, or it's in range
-                if (entity.isAttackingPartyMember(this.character) && (!this.settings.kite || this.withinRange(entity)) && this.canSee(entity))
+                if (entity.isAttackingPartyMember(this.character) && (!this.settings.kite || this.withinRange(entity)) && this.shouldSee(entity))
                     return setTarget(entity);
 
                 let entityLocation = Location.fromIPosition(entity);
@@ -249,10 +267,6 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             return;
 
         if (leader.destination != null) {
-            //if we're already there, just wait
-            if (this.distance(leader.destination) < this.range)
-                return;
-
             await this.smartMove(leader.destination, { getWithin: this.range });
             return;
         }
@@ -286,7 +300,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         if (target != null) {
             if(Pathfinder.canWalkPath(this.location, target)) {
-                if(!SETTINGS.ATTACKABLE_BOSSES.contains(target.type) && this.settings.kite && this.character.speed > target.speed && this.range > 100 && this.range > target.range)
+                let isBoss = SETTINGS.ATTACKABLE_BOSSES.contains(target.type);
+                let attackingWarrior = target.target != null && this.players.getValue(target.target)?.ctype === "warrior" && target.target != this.character.id;
+
+                if((!isBoss || !attackingWarrior) && this.settings.kite && this.character.speed > target.speed && this.range > 100 && this.range > target.range)
                     if(await this.circleKiteAsync())
                         return;
             }
@@ -297,21 +314,8 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
             if (distance < this.range * 0.75 && !this.settings.kite)
                 return;
-            else {
+            else 
                 await this.weightedMoveToEntityAsync(target, this.range, true);
-                /*
-                let entityLocation = Location.fromIPosition(target);
-                if (Pathfinder.canWalkPath(this.location, entityLocation)) {
-                    let walkTo = entityLocation.point.offsetByAngle(target.angle, this.range / 2);
-                    let lerped = this.point.lerp(walkTo, this.character.speed, this.range);
-
-                    return await this.character.move(lerped.x, lerped.y, true)
-                        .then(undefined, () => {})
-                        .catch(() => { });
-                } else
-                    return await this.smartMove(entityLocation, { getWithin: this.range });
-                */
-            }
         } else {
             //if we dont get a target within a reasonable amount of time
             let hasTarget = await PromiseExt.pollWithTimeoutAsync(async () => this.target != null, 1000);
@@ -354,7 +358,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         //we want to generally be in range of whatever we target
         //we can do bigger circles if the monster is faster
-        let maxRadius = (this.range/2) + target.speed;
+        let maxRadius = (this.range/2) + (target.range/2);
 
         //get the closest spawn bounds of our target monster
         //get the center point, and smallest dimension of those bounds

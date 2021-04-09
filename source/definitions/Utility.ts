@@ -1,5 +1,4 @@
-import { List } from "../collections/List";
-import { Entity, Point } from "../internal";
+import { Point } from "../internal";
 
 export class Utility {
     static msSince(date: Date) {

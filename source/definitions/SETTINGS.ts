@@ -30,7 +30,6 @@ export class SETTINGS {
                     attackMTypes: new List([
                         "bat"
                     ]),
-                    map: "cave"
                 }
             ],
             ["ragnah",
@@ -43,7 +42,6 @@ export class SETTINGS {
                     attackMTypes: new List([
                         "bat"
                     ]),
-                    map: "cave"
                 }
             ],
             ["dreamweaver",
@@ -54,9 +52,8 @@ export class SETTINGS {
                     movementInterval: 1000 / 10,
                     kite: true,
                     attackMTypes: new List([
-                        "bat"
+                        "crabx"
                     ]),
-                    map: "cave"
                 }
             ]
         ]));
@@ -105,7 +102,7 @@ export class SETTINGS {
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
         //"ctristone", "vitring"
-        "wbook0", "ctristone"
+        "wbook0", "intearring", "dexearring", "strearring"
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
@@ -116,29 +113,28 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
-        "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3",
+        "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3", "vitscroll",
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "elixirfires", "snakeoil",
-        "bunnyelixir", "mbelt", "rabbitsfoot", "goldenegg",
-        "intearring", "dexearring", "strearring", "vitearring", "forscroll", "sanguine",
+        "bunnyelixir", "mbelt", "rabbitsfoot",
+        "vitearring", "forscroll", "sanguine",
         "suckerpunch", "fury", "starkillers"
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
-        "staff", "bow"
+        "bow"
     ]);
 
     static ITEMS_TO_BUY_FROM_PONTY = new List<ItemName>([
-        "dexring",
-        "intearring", "dexearring", "strearring",
+        "intearring", "dexearring", "strearring", "vitearring",
         "mbelt",
         "fireblade", "froststaff", "t2bow",
     ]);
 
     static ITEMS_TO_SELL = new List<ItemName>([
         "epyjamas", "eears", "pinkie", "carrotsword",
-        "hpbelt", "hpamulet", "ringsj", "crabclaw",
+        "hpbelt", "hpamulet", "ringsj", "cclaw",
         "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
-        "intamulet", "dexamulet", "stramulet",
+        "intamulet", "dexamulet", "stramulet", "crabclaw",
         "spear", "pmace", "hammer", "rapier", "sword", "dagger",
 
         //rugged armor
@@ -150,11 +146,11 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_EXCHANGE = new List<ItemName>([
-        "candy0", "candy1", "basketofeggs", "gem0", "armorbox", "weaponbox",
+        "candy0", "candy1", "gem0", "armorbox", "weaponbox", "goldenegg"
     ]);
 
     static ITEMS_TO_CRAFT = new List<ItemName>([
-        "froststaff", "ctristone", "basketofeggs", "firebow", "elixirfires"
+        "firebow", //"elixirfires"
     ]);
 
     static readonly ITEM_TYPES_TO_KEEP = new List<ItemType>([
