@@ -340,7 +340,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (highestQuantityRequired > 0) {
                 let currentItems = this.character.locateItems(item.name, undefined, { level: item.level });
                 let currentQuantity = new List(currentItems)
-                    .sumBy(item => this.character.items[item].q ?? 1);
+                    .sum(item => this.character.items[item].q ?? 1);
                 //if we have less than double the crafting requirements, we should withdrawl it
                 if ((currentQuantity ?? 0) < highestQuantityRequired * 2)
                     return true;

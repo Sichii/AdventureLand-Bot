@@ -51,7 +51,7 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
                     let entityPoint = Point.fromIPosition(entity);
                     let distanceToEntity = entry.location.point.distance(entityPoint);
                     //this is the size of the effect
-                    let range = Math.max(((entity.rage ? entity.range : (CONSTANTS.ENTITY_WIDTH)) + (entity.speed) + CONSTANTS.ENTITY_WIDTH) - distanceToEntity, 0);
+                    let range = Math.max(((entity.rage ? entity.range : CONSTANTS.ENTITY_WIDTH * 2) + entity.speed) - distanceToEntity, 0);
 
                     //give this a high initial weight, so even the outer edges will push players around
                     entry.weight += (range + CONSTANTS.ENTITY_WIDTH) ** 3;                    
@@ -70,9 +70,9 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
 
                 if(heuristic < 0)
                     //we reverse the heuristic here, because closer is better(as long as we arent standing on the priest)
-                    entry.weight -= ((heuristicMax + heuristic) ** 2);
+                    entry.weight -= ((heuristicMax - heuristic) ** 2);
                 else
-                    entry.weight += (heuristic ** 2);
+                    entry.weight += (heuristic ** 3);
             }
         }
     }

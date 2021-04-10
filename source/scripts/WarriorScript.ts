@@ -67,10 +67,9 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 		//need to be careful about using this, can kill ourselves pretty easily
 		if (this.character.canUse("cleave")) {
-			let cleaveRange = Game.G.skills["cleave"].range!;
 			let entitiesInRange = this.entities
 				.values
-				.where(entity => this.distance(entity) < cleaveRange)
+				.where(entity => this.withinSkillRange(entity, "cleave", true))
 				.toList();
 
 			//only worth cleaving if we're going to hit more stuff

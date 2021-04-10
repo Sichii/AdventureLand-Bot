@@ -47,7 +47,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     get incomingHPS() {
         let hps = 200;
         //rough calculation, doesnt take into account armor/resist/etc
-        hps += (this.character.attack * this.character.frequency * (this.character.lifesteal/100));
+        hps += (this.character.attack * this.character.frequency * (this.character.lifesteal/150));
 
         let nearbyPriest = this.nearbyPriest;
         if(nearbyPriest)
@@ -385,11 +385,11 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                         }
                     })
                     .where(set => set.radius > this.range/3)
-                    .minBy(set => set.center.distance(target!));
+                    .min(set => set.center.distance(target!));
             })
             .where(set => set != null)
             .where(set => set!.radius > this.range/3)
-            .minBy(set => set!.center.distance(target!));
+            .min(set => set!.center.distance(target!));
 
         if(circle == null)
             return false;
@@ -461,14 +461,14 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             return 0;
 
         let expectedIncommingDps = targets
-            .sumBy(entity => entity.attack * entity.frequency)!;
+            .sum(entity => entity.attack * entity.frequency)!;
         let sample = targets.find(0);
         let damageType = sample.damage_type;
 
         if (sample.type === "pppompom" || sample.type === "fireroamer")
             expectedIncommingDps += (targets.length * 600);
 
-        let armor = this.character.armor + (this.character.level * 2.5);
+        let armor = this.character.armor;
         let resistance = this.character.resistance;
 
         if (this.character.s.hardshell)
@@ -491,7 +491,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             expectedIncommingDps *= Utility.calculateDamageMultiplier(resistance - pierce);
         } else {
             if (targets.length > this.character.pcourage)
-            expectedIncommingDps *= 2;
+                expectedIncommingDps *= 2;
         }
 
         return expectedIncommingDps;

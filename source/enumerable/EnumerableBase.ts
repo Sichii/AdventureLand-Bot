@@ -60,20 +60,20 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         return undefined;
     }
 
-    sumBy(selector: (item: T) => number): number | undefined {
+    sum(selector: (item: T) => number): number | undefined {
         let result: number | undefined;
 
         for(let item of this) {
             if(result == null)
                 result = 0;
-
+``
             result += selector(item);
         }
 
         return result;
     }
 
-    maxBy(selector: (item: T) => number) {
+    max(selector: (item: T) => number) {
         let best: { item: T, val: number } | undefined;
 
         for(let item of this) {
@@ -86,7 +86,7 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         return best?.item;
     }
 
-    minBy(selector: (item: T) => number) {
+    min(selector: (item: T) => number) {
         let best: { item: T, val: number } | undefined;
 
         for(let item of this) {

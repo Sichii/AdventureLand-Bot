@@ -1,4 +1,4 @@
-import { NodeData, MapName, MonsterName, NPCType, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List } from "../internal";
+import { NodeData, MapName, MonsterName, NPCType, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, CONSTANTS, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
@@ -112,29 +112,45 @@ export abstract class PingCompensatedScript extends KindBase {
         if(elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(Utility.msSince(new Date(this.character.slots.elixir.expires))) < 1000))
             await this.character.equip(elixirSlot);
 
-        if (this.mpPct < SETTINGS.MP_POT_AT && this.missingMp > 300 && this.character.canUse("use_mp")) {
-            let potionToUse = SETTINGS.POTIONS
+        if (this.mpPct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp")) {
+            //for all mp potions in settings, get their info
+            let mpPotionInfo = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("mpot"))
-                .select(potion => this.character.locateItem(potion))
-                .firstOrDefault();
+                .toDictionary(potion => potion, potion => new List(Game.G.items[potion].gives)
+                    .first(([type, ]) => type === "mp"))
 
-            if (potionToUse != null)
-                return await this.character.useMPPot(potionToUse);
+            //for each possible potion, see if we're missing enough mp to warrant using it
+            for(let [potion, [, amount]] of mpPotionInfo.orderByDesc(([, [, amount]]) => amount))
+                if(this.missingMp > amount) {
+                    let itemPos = this.character.locateItem(potion);
+
+                    //use it if we have it
+                    if(itemPos != null)
+                        return await this.character.useMPPot(itemPos);
+                }
         }
 
-        if (this.hpPct < SETTINGS.HP_POT_AT && this.missingHp > 300 && this.character.canUse("use_hp")) {
-            let potionToUse = SETTINGS.POTIONS
+        if (this.hpPct < SETTINGS.HP_POT_AT && this.character.canUse("use_hp")) {
+            //for all mp potions in settings, get their info
+            let hpPotionInfo = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("hpot"))
-                .select(potion => this.character.locateItem(potion))
-                .firstOrDefault();
+                .toDictionary(potion => potion, potion => new List(Game.G.items[potion].gives)
+                    .first(([type, ]) => type === "hp"));
 
-            if (potionToUse != null)
-                return await this.character.useHPPot(potionToUse);
+            //for each possible potion, see if we're missing enough mp to warrant using it
+            for(let [potion, [, amount]] of hpPotionInfo)
+                if(this.missingHp > amount) {
+                    let itemPos = this.character.locateItem(potion);
+
+                    //use it if we hav eit
+                    if(itemPos != null)
+                        return await this.character.useHPPot(itemPos);
+                }
         }
 
-        if (this.missingMp > 100 && this.character.canUse("regen_mp"))
+        if (this.missingMp > CONSTANTS.REGEN_MP_AMOUNT && this.character.canUse("regen_mp"))
             return await this.character.regenMP();
-        else if (this.missingHp > 50 && this.character.canUse("regen_hp"))
+        else if (this.missingHp > CONSTANTS.REGEN_HP_AMOUNT && this.character.canUse("regen_hp"))
             return await this.character.regenHP();
 
         return Promise.resolve();
@@ -154,7 +170,7 @@ export abstract class PingCompensatedScript extends KindBase {
         return distance < range;
     }
 
-    withinSkillRange(entity: Point | IPosition, skill: SkillName) {
+    withinSkillRange(entity: Point | IPosition, skill: SkillName, safetyCheck = false) {
         let skillInfo = Game.G.skills[skill];
 
         if (skillInfo == null) {
@@ -179,7 +195,7 @@ export abstract class PingCompensatedScript extends KindBase {
         if (range == null)
             return true;
 
-        return this.distance(entity) < range;
+        return this.distance(entity) < (safetyCheck ? range * 1.05 : range);
     }
 
     attackVs(entity: Entity) {

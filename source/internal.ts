@@ -13,7 +13,7 @@ export * from "./comparer/IEquatable";
 export * from "./comparer/CaseInsensitiveStringComparer";
 export * from "./comparer/CaseSensitiveStringComparer";
 export * from "./comparer/StringComparer";
-export * from "./comparer/DefaultComparer";
+export * from "./comparer/DefaultEqualityComparer";
 export * from "./comparer/EqualityComparer";
 
 export * from "./enumerable/IEnumerable"

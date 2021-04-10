@@ -28,7 +28,7 @@ export class SETTINGS {
                     movementInterval: 1000 / 10,
                     kite: false,
                     attackMTypes: new List([
-                        "bat"
+                        "mole"
                     ]),
                 }
             ],
@@ -38,10 +38,11 @@ export class SETTINGS {
                     elixir: "bunnyelixir",
                     mainInterval: 1000 / 30,
                     movementInterval: 1000 / 10,
-                    kite: true,
-                    attackMTypes: new List([
-                        "bat"
-                    ]),
+                    assist: "makiz"
+                    //kite: true,
+                    //attackMTypes: new List([
+                    //    "bat"
+                    //]),
                 }
             ],
             ["dreamweaver",
@@ -50,10 +51,11 @@ export class SETTINGS {
                     elixir: "bunnyelixir",
                     mainInterval: 1000 / 30,
                     movementInterval: 1000 / 10,
-                    kite: true,
-                    attackMTypes: new List([
-                        "crabx"
-                    ]),
+                    assist: "makiz"
+                    //kite: true,
+                    //attackMTypes: new List([
+                    //    "bat"
+                    //]),
                 }
             ]
         ]));
@@ -83,7 +85,7 @@ export class SETTINGS {
 
     //#region Buy
     static POTIONS = new List<ItemName>([
-        "hpot0", "mpot0"
+        "hpot0", "mpot0", "hpot1", "mpot1"
     ]);
 
     static C_SCROLLS = new List<ItemName>([

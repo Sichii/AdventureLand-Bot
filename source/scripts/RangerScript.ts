@@ -1,5 +1,4 @@
-import { List } from "../collections/List";
-import { SETTINGS, Utility, Game, HiveMind, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location, Dictionary } from "../internal";
+import { SETTINGS, Utility, Game, HiveMind, List, Pathfinder, PromiseExt, Ranger, ScriptBase, ServerIdentifier, ServerRegion, Location, Dictionary } from "../internal";
 
 export class RangerScript extends ScriptBase<Ranger> {
     constructor(character: Ranger, hiveMind: HiveMind) {
@@ -36,7 +35,7 @@ export class RangerScript extends ScriptBase<Ranger> {
             let lowestPartyMember = this.hiveMind
                 .values
                 .where(member => this.withinSkillRange(member.character, "4fingers"))
-                .minBy(member => member.hpPct);
+                .min(member => member.hpPct);
 
             if (lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT / 2.5)
                 await this.character.fourFinger(lowestPartyMember.character.id);

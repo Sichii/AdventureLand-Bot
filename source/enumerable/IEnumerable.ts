@@ -8,9 +8,9 @@ export interface IEnumerable<T> extends Iterable<T> {
     contains(item: T, comparer?: IEqualityComparer<T>): boolean;
     count(predicate: (item: T) => boolean): number;
     elementAt(index: number): T | undefined;
-    sumBy(selector: (item: T) => number): number | undefined;
-    maxBy(selector: (item: T) => number): T | undefined;
-    minBy(selector: (item: T) => number): T | undefined;
+    sum(selector: (item: T) => number): number | undefined;
+    max(selector: (item: T) => number): T | undefined;
+    min(selector: (item: T) => number): T | undefined;
     
     //iterators
     select<TResult>(selector: (item: T) => TResult): IEnumerable<TResult>;
