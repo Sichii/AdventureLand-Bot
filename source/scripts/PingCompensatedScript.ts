@@ -7,6 +7,10 @@ export abstract class PingCompensatedScript extends KindBase {
     destination?: MapName | MonsterName | NPCType | IPosition;
     target?: Entity;
 
+    get settings() {
+        return SETTINGS.PARTY_SETTINGS.getValue(this.character.name)!;
+    }
+
     get items() {
         return new List(this.character.items);
     }
@@ -195,7 +199,7 @@ export abstract class PingCompensatedScript extends KindBase {
         if (range == null)
             return true;
 
-        return this.distance(entity) < (safetyCheck ? range * 1.05 : range);
+        return this.distance(entity) < ((safetyCheck && this.settings.safeRangeCheckEnabled) ? range * 1.05 : range);
     }
 
     attackVs(entity: Entity) {

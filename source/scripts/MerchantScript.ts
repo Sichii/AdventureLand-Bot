@@ -125,6 +125,21 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     await this.character.sendItem(theirMind.character.name, this.character.locateItem(potion), SETTINGS.POTION_THRESHOLD - theirQuantity);
             }
 
+            //give them the elixir theyre using
+            let elixirName = theirMind.settings.elixir;
+            if(elixirName) {
+                let theirElixirs = theirMind.items.firstOrDefault(item => item != null && item.name === elixirName);
+
+                if(!theirElixirs || theirElixirs.q! < SETTINGS.ELIXIR_THRESHOLD) {
+                    let ourElixirIndex = this.character.locateItem(elixirName);
+
+                    if(ourElixirIndex) {
+                        let ourElixirs = this.items.find(ourElixirIndex);
+                        await this.character.sendItem(theirMind.character.name, ourElixirIndex, Math.min(ourElixirs.q!, SETTINGS.ELIXIR_THRESHOLD - (theirElixirs?.q ?? 0)))
+                    }
+                }
+            }
+
             for (let key in theirMind.character.items) {
                 if(+key > 34) //reserve bottom row 
                     continue;

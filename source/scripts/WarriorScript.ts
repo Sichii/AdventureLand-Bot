@@ -34,10 +34,10 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 	async defenseAsync() {
 		if (this.character.canUse("hardshell") && !this.character.s.fingered) {
-			if (this.hpPct < (SETTINGS.PRIEST_HEAL_AT / 2)) {
+			if (this.hpPct < SETTINGS.PRIEST_HEAL_AT) {
 				let target = this.target;
 
-				if (target != null && target.damage_type === "physical")
+				if (target != null && target.damage_type === "physical" && (this.calculateIncomingDPS() * 2) > this.character.hp)
 					await this.character.hardshell();
 			}
 		}
@@ -74,12 +74,10 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 			//only worth cleaving if we're going to hit more stuff
 			if (entitiesInRange.length >= 3) {
-				let expectedIncomingDps = this.calculateIncomingDamage(entitiesInRange.toArray());
-
 				//if we expect more hps than incomming dps, we can cleave
 				//or everything in range is already targeting me
 				//safety margin of hppots, partyHeal, and hardShell
-				if (expectedIncomingDps < this.incomingHPS || entitiesInRange.all(entity => entity.target === this.character.id))
+				if (this.calculateIncomingDPS(entitiesInRange) < this.calculateIncomingHPS() || entitiesInRange.all(entity => entity.target === this.character.id))
 					await this.character.cleave();
 			}
 		}

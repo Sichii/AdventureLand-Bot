@@ -17,7 +17,8 @@ export class SETTINGS {
                     class: "merchant",
                     elixir: "bunnyelixir",
                     mainInterval: 1000,
-                    movementInterval: 1000 / 10
+                    movementInterval: 1000 / 10,
+                    safeRangeCheckEnabled: false
                 }
             ],
             ["makiz",
@@ -26,6 +27,7 @@ export class SETTINGS {
                     elixir: "bunnyelixir",
                     mainInterval: 1000 / 30,
                     movementInterval: 1000 / 10,
+                    safeRangeCheckEnabled: false,
                     kite: false,
                     attackMTypes: new List([
                         "mole"
@@ -38,6 +40,7 @@ export class SETTINGS {
                     elixir: "bunnyelixir",
                     mainInterval: 1000 / 30,
                     movementInterval: 1000 / 10,
+                    safeRangeCheckEnabled: false,
                     assist: "makiz"
                     //kite: true,
                     //attackMTypes: new List([
@@ -51,6 +54,7 @@ export class SETTINGS {
                     elixir: "bunnyelixir",
                     mainInterval: 1000 / 30,
                     movementInterval: 1000 / 10,
+                    safeRangeCheckEnabled: false,
                     assist: "makiz"
                     //kite: true,
                     //attackMTypes: new List([
@@ -78,6 +82,7 @@ export class SETTINGS {
     static HP_POT_AT = 0.5;
     static MP_POT_AT = 0.75;
     static POTION_THRESHOLD = 3000;
+    static ELIXIR_THRESHOLD = 20;
     static SCROLLS_THRESHOLD = 50;
     static MAX_COMPOUND_LEVEL = 3;
     static MAX_UPGRADE_LEVEL = 7;
@@ -104,7 +109,7 @@ export class SETTINGS {
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
         //"ctristone", "vitring"
-        "wbook0", "intearring", "dexearring", "strearring"
+        "wbook0", "intearring", "dexearring", "strearring", //"ctristone"
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
@@ -117,7 +122,7 @@ export class SETTINGS {
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
         "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3", "vitscroll",
         "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "elixirfires", "snakeoil",
-        "bunnyelixir", "mbelt", "rabbitsfoot",
+        "mbelt", "rabbitsfoot",
         "vitearring", "forscroll", "sanguine",
         "suckerpunch", "fury", "starkillers"
     ]);
@@ -133,11 +138,17 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_SELL = new List<ItemName>([
+        //easter armor
         "epyjamas", "eears", "pinkie", "carrotsword",
-        "hpbelt", "hpamulet", "ringsj", "cclaw",
-        "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
-        "intamulet", "dexamulet", "stramulet", "crabclaw",
+        //random low level junk
+        "hpbelt", "hpamulet", "ringsj", "cclaw", "crabclaw",
         "spear", "pmace", "hammer", "rapier", "sword", "dagger",
+
+        //tier 1 armor
+        "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
+
+        //stat amulets
+        "intamulet", "dexamulet", "stramulet",
 
         //rugged armor
         "coat1", "helmet1", "pants1", "gloves1", "shoes1",
@@ -152,7 +163,7 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_CRAFT = new List<ItemName>([
-        "firebow", //"elixirfires"
+        "firebow", //"ctristone", //"elixirfires"
     ]);
 
     static readonly ITEM_TYPES_TO_KEEP = new List<ItemType>([

@@ -5,10 +5,6 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     hiveMind: HiveMind;
     commandManager: CommandManager;
 
-    get settings() {
-        return SETTINGS.PARTY_SETTINGS.getValue(this.character.name)!;
-    }
-
     get leader() {
         let ourSettings = this.settings;
         if (ourSettings?.assist != null)
@@ -44,16 +40,63 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         .firstOrDefault(player => player.ctype === "priest" && player.party === this.character.party); 
     }
 
-    get incomingHPS() {
+    calculateIncomingHPS(nearbyPriest = this.nearbyPriest) {
         let hps = 200;
         //rough calculation, doesnt take into account armor/resist/etc
         hps += (this.character.attack * this.character.frequency * (this.character.lifesteal/150));
 
-        let nearbyPriest = this.nearbyPriest;
-        if(nearbyPriest)
-            hps += (nearbyPriest.attack * nearbyPriest.frequency);
+        if(nearbyPriest) {
+            let priestHps = nearbyPriest.attack * nearbyPriest.frequency;
+            if(nearbyPriest.s.poisoned)
+                priestHps *= (1 - Game.G.conditions.poisoned.healm!);
+
+            hps += priestHps;
+        }
 
         return hps;
+    }
+
+    calculateIncomingDPS(entities: Iterable<Entity> = this.entities.values.where(entity => entity.target === this.character.id)) {
+        let dps = 0;
+
+        if(this.character.s.burned) {
+            let interval = Game.G.conditions.burned.interval!;
+            let ticksPerSecond = 1000 / interval;
+            let remainingTicks = Math.floor(this.character.s.burned.ms / 1000 / ticksPerSecond);
+            let damagePerTick = this.character.s.burned.intensity / 5;
+
+            if(remainingTicks > ticksPerSecond)
+                remainingTicks = ticksPerSecond;
+
+            dps += remainingTicks * damagePerTick;
+        }
+
+        let armor = this.character.armor;
+        let resistance = this.character.resistance;
+
+        if(this.character.s.hardshell)
+            armor -= Game.G.conditions.hardshell.armor!;
+
+        if(this.character.s.fingered)
+            resistance -= Game.G.conditions.fingered.resistance!;
+
+        for(let entity of entities) {
+            let entityDPS = entity.attack * entity.frequency;
+
+            switch(entity.damage_type) {
+                case "physical":
+                    dps += (entityDPS * Utility.calculateDamageMultiplier(armor - (entity.apiercing ?? 0)));
+                    break;
+                case "magical":
+                    dps += (entityDPS * Utility.calculateDamageMultiplier(resistance - (entity.rpiercing ?? 0)));
+                    break;
+                case "pure":
+                    dps += entityDPS;
+                    break;
+            }
+        }
+
+        return dps;
     }
 
     constructor(character: T, hiveMind: HiveMind) {
@@ -143,8 +186,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
             this.target = leader.target;
         } else {
-            if (!this.readyToGo)
+            if (!this.readyToGo) {
+                setTarget(undefined);
                 return;
+            }
 
             let beingAttacked = this.isBeingAttacked;
             if (this.target != null) {
@@ -293,8 +338,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     }
 
     async leaderMove() {
-        if (this.character.rip || !this.readyToGo)
+        if (this.character.rip || !this.readyToGo) {
+            this.destination = undefined;
             return;
+        }
 
         let target = this.target;
 
@@ -452,48 +499,5 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             if (this.distance(script.character) < distance + 50)
                 break;
         }
-    }
-
-    calculateIncomingDamage(possibleTargets: Iterable<Entity>) {
-        let targets = new List(possibleTargets);
-
-        if(!targets.any())
-            return 0;
-
-        let expectedIncommingDps = targets
-            .sum(entity => entity.attack * entity.frequency)!;
-        let sample = targets.find(0);
-        let damageType = sample.damage_type;
-
-        if (sample.type === "pppompom" || sample.type === "fireroamer")
-            expectedIncommingDps += (targets.length * 600);
-
-        let armor = this.character.armor;
-        let resistance = this.character.resistance;
-
-        if (this.character.s.hardshell)
-            armor -= Game.G.conditions.hardshell.armor!;
-        if (this.character.s.fingered)
-            resistance -= Game.G.conditions.fingered.resistance!;
-
-        //calculate how much dps we expect to take if we cleave
-        if (damageType === "physical") {
-            if (targets.length > this.character.courage)
-                expectedIncommingDps *= 2;
-
-            let pierce = sample.apiercing ?? 0;
-            expectedIncommingDps *= Utility.calculateDamageMultiplier(armor - pierce);
-        } else if(damageType === "magical") {
-            if (targets.length > this.character.mcourage)
-                expectedIncommingDps *= 2;
-
-            let pierce = sample.rpiercing ?? 0;
-            expectedIncommingDps *= Utility.calculateDamageMultiplier(resistance - pierce);
-        } else {
-            if (targets.length > this.character.pcourage)
-                expectedIncommingDps *= 2;
-        }
-
-        return expectedIncommingDps;
     }
 }

@@ -37,7 +37,7 @@ export class RangerScript extends ScriptBase<Ranger> {
                 .where(member => this.withinSkillRange(member.character, "4fingers"))
                 .min(member => member.hpPct);
 
-            if (lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT / 2.5)
+            if (lowestPartyMember != null && lowestPartyMember.hpPct < SETTINGS.PRIEST_HEAL_AT && (lowestPartyMember.calculateIncomingDPS() * 1.5) > lowestPartyMember.character.hp)
                 await this.character.fourFinger(lowestPartyMember.character.id);
         }
 
@@ -92,7 +92,7 @@ export class RangerScript extends ScriptBase<Ranger> {
                 
                 //if we're hitting new targets, make sure we can handle it
                 if(!requireCheck 
-                    || (this.calculateIncomingDamage(targets) <= this.incomingHPS 
+                    || (this.calculateIncomingDPS(targets) <= this.calculateIncomingHPS() 
                         && (targets.find(0).max_hp < this.character.attack * 2 || targets.any(entity => entity.hp < this.attackVs(entity) * 0.7)))) {
                     await this.character.threeShot(targets.find(0).id, targets.find(1).id, targets.find(2).id);
                     return true;
