@@ -1,10 +1,9 @@
-import { NodeData, MapName, MonsterName, NPCType, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, CONSTANTS, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List } from "../internal";
+import { NodeData, MapName, MonsterName, NPCName, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, CONSTANTS, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
     metricManager: MetricManager;
-    lastConnect: Date;
-    destination?: MapName | MonsterName | NPCType | IPosition;
+    destination?: MapName | MonsterName | NPCName | IPosition;
     target?: Entity;
 
     get settings() {
@@ -65,7 +64,6 @@ export abstract class PingCompensatedScript extends KindBase {
 
         this.character = character;
         this.metricManager = new MetricManager(this);
-        this.lastConnect = new Date();
 
         this.loopAsync(() => this.usePotionRegenAsync(), 1000 / 10);
         this.loopAsync(async () => this.monitorCC(), 1000);
@@ -76,7 +74,7 @@ export abstract class PingCompensatedScript extends KindBase {
             try {
                 if (!this.isConnected)
                     await PromiseExt.delay(5000);
-                else if(this.destination != null && !ignoreSmartMove && !this.isBeingAttacked) {
+                else if (this.destination != null && !ignoreSmartMove && !this.isBeingAttacked) {
                     await PromiseExt.delay(250);
                 }
                 else {
@@ -113,7 +111,7 @@ export abstract class PingCompensatedScript extends KindBase {
         let expectedElixir = SETTINGS.PARTY_SETTINGS.getValue(this.character.name)?.elixir ?? <ItemName>"";
         let elixirSlot = this.character.locateItem(expectedElixir);
 
-        if(elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(Utility.msSince(new Date(this.character.slots.elixir.expires))) < 1000))
+        if (elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(Utility.msSince(new Date(this.character.slots.elixir.expires))) < 1000))
             await this.character.equip(elixirSlot);
 
         if (this.mpPct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp")) {
@@ -121,15 +119,15 @@ export abstract class PingCompensatedScript extends KindBase {
             let mpPotionInfo = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("mpot"))
                 .toDictionary(potion => potion, potion => new List(Game.G.items[potion].gives)
-                    .first(([type, ]) => type === "mp"))
+                    .first(([type,]) => type === "mp"))
 
             //for each possible potion, see if we're missing enough mp to warrant using it
-            for(let [potion, [, amount]] of mpPotionInfo.orderByDesc(([, [, amount]]) => amount))
-                if(this.missingMp > amount) {
+            for (let [potion, [, amount]] of mpPotionInfo.orderByDesc(([, [, amount]]) => amount))
+                if (this.missingMp > amount) {
                     let itemPos = this.character.locateItem(potion);
 
                     //use it if we have it
-                    if(itemPos != null)
+                    if (itemPos != null)
                         return await this.character.useMPPot(itemPos);
                 }
         }
@@ -139,15 +137,15 @@ export abstract class PingCompensatedScript extends KindBase {
             let hpPotionInfo = SETTINGS.POTIONS
                 .where(potion => potion.startsWith("hpot"))
                 .toDictionary(potion => potion, potion => new List(Game.G.items[potion].gives)
-                    .first(([type, ]) => type === "hp"));
+                    .first(([type,]) => type === "hp"));
 
             //for each possible potion, see if we're missing enough mp to warrant using it
-            for(let [potion, [, amount]] of hpPotionInfo)
-                if(this.missingHp > amount) {
+            for (let [potion, [, amount]] of hpPotionInfo)
+                if (this.missingHp > amount) {
                     let itemPos = this.character.locateItem(potion);
 
                     //use it if we hav eit
-                    if(itemPos != null)
+                    if (itemPos != null)
                         return await this.character.useHPPot(itemPos);
                 }
         }
@@ -203,25 +201,34 @@ export abstract class PingCompensatedScript extends KindBase {
     }
 
     attackVs(entity: Entity) {
-        if(this.character.damage_type === "physical")
+        if (this.character.damage_type === "physical")
             return this.character.attack * Utility.calculateDamageMultiplier(entity.armor - this.character.apiercing);
         else
             return this.character.attack * Utility.calculateDamageMultiplier(entity.resistance - this.character.rpiercing);
     }
 
-    smartMove(to: MapName | MonsterName | NPCType | IPosition, options?: {
+    async smartMove(to: MapName | MonsterName | NPCName | IPosition, options?: {
         getWithin?: number;
         useBlink?: boolean;
+        avoidTownWarps?: boolean;
     }): Promise<NodeData | void> {
         this.destination = to;
 
+        if (!options)
+            options = {};
+
         //safety margin
-        if(options?.getWithin != null)
+        if (options?.getWithin != null)
             options.getWithin *= 0.95;
 
-        return this.character.smartMove(to, options)
-            .then(undefined, () => {})
-            .catch(() => {})
+        await this.character.smartMove(to, options)
+            .then(undefined, async (reason) => {
+                if (reason === "warpToTown failed.") {
+                    options!.avoidTownWarps = true;
+                    Logger.Warn("Attempting to path without warping...");
+                    await this.character.smartMove(to, options);
+                }
+            })
             .finally(() => this.destination = undefined);
     }
 }

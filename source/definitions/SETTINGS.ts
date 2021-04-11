@@ -29,8 +29,11 @@ export class SETTINGS {
                     movementInterval: 1000 / 10,
                     safeRangeCheckEnabled: false,
                     kite: false,
-                    attackMTypes: new List([
+                    attackMTypes: new List<MonsterName>([
                         "mole"
+                    ]),
+                    originalGear: new List<ItemName>([
+                        "bataxe", "mwgloves"
                     ]),
                 }
             ],
@@ -86,6 +89,7 @@ export class SETTINGS {
     static SCROLLS_THRESHOLD = 50;
     static MAX_COMPOUND_LEVEL = 3;
     static MAX_UPGRADE_LEVEL = 7;
+    static MINIMUM_RESERVED_ITEM_INDEX = 34;
     //#endregion
 
     //#region Buy
@@ -117,6 +121,9 @@ export class SETTINGS {
         "fireblade", "froststaff", "t2bow", "firebow",
         "eslippers", "ecape", "oozingterror", "harbringer", "bataxe",
         "throwingstars", "basher", "crossbow",
+
+        //darkforge armor
+        "xarmor", "xhelmet", "xpants", "xgloves", "xboots"
     ]);
 
     static ITEMS_TO_DEPOSIT = new List<ItemName>([
@@ -155,7 +162,7 @@ export class SETTINGS {
         //heavy armor
         "harmor", "hhelmet", "hpants", "hgloves", "hboots",
         //darkforge armor
-        "xarmor", "xhelmet", "xpants", "xgloves", "xboots"
+        //"xarmor", "xhelmet", "xpants", "xgloves", "xboots"
     ]);
 
     static ITEMS_TO_EXCHANGE = new List<ItemName>([

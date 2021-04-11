@@ -56,6 +56,13 @@ export class Point extends KindBase {
         return new Point(this.x + dx, this.y + dy);
     }
 
+    midPoint(other: Point) {
+        let x = (this.x + other.x)/2;
+        let y = (this.y + other.y)/2;
+
+        return new Point(x, y);
+    }
+
     fastDistance(other: IPosition) {
         let a = (other.x - this.x);
         let b = (other.y - this.y);

@@ -9,4 +9,5 @@ export interface PartyMemberSettings {
     assist?: string;
     kite?: boolean;
     attackMTypes?: List<MonsterName>;
+    originalGear?: List<ItemName>;
 }

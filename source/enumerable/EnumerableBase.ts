@@ -1,4 +1,4 @@
-import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, DefaultComparer, IEqualityComparer } from "../internal";
+import { Dictionary, DefaultEnumerableIterator, IEnumerable, List, DefaultEqualityComparer, IEqualityComparer } from "../internal";
 
 export abstract class EnumerableBase<T> implements IEnumerable<T> {
     first(predicate?: (item: T) => boolean) {
@@ -33,7 +33,7 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         return false;
     }
 
-    contains(item: T, comparer: IEqualityComparer<T> = new DefaultComparer<T>()) {
+    contains(item: T, comparer: IEqualityComparer<T> = new DefaultEqualityComparer<T>()) {
         for(let xItem of this)
             if(xItem != null && comparer.Equals(xItem, item))
                 return true;

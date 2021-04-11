@@ -2,7 +2,7 @@ import { IEqualityComparer } from "../internal";
 
 export class CaseInsensitiveStringComparer implements IEqualityComparer<string> {
     Equals(item1: string, item2: string): boolean {
-        return item1.toUpperCase() === item2.toUpperCase();
+        return item1 != null && item2 != null && item1.toUpperCase() === item2.toUpperCase();
     }
 
     GetHashCode(item: string): number {

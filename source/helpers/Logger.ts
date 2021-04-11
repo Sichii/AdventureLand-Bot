@@ -3,9 +3,9 @@ import { Enum } from "../internal";
 
 export enum LogLevel {
     Error = 1,
-    Warn = Error | 1 << 1,
-    Info = Warn | 1 << 2,
-    Trace = Info | 1 << 3
+    Warn = Error | (1 << 1),
+    Info = Warn | (1 << 2),
+    Trace = Info | (1 << 3)
 }
 
 export class Logger {

@@ -1,4 +1,4 @@
-import { EnumerableBase, IEnumerable } from "../internal";
+import { EnumerableBase, EqualityComparer, IEnumerable } from "../internal";
 
 export class List<T> extends EnumerableBase<T> {
     private items: T[];
@@ -30,6 +30,32 @@ export class List<T> extends EnumerableBase<T> {
 
     find(index: number) {
         return this.items[index];
+    }
+
+    findIndex(predicate: (item: T) => boolean) {
+        let index = 0;
+
+        for (let item of this) {
+            if (predicate(item))
+                return index;
+
+            index++;
+        }
+
+        return -1;
+    }
+
+    indexOf(item: T, comparer = EqualityComparer.Default<T>()) {
+        let index = 0;
+
+        for(let itemx of this) {
+            if(comparer.Equals(item, itemx))
+                return index;
+
+            index++;
+        }
+
+        return -1;
     }
 
     add(item: T) {

@@ -1,4 +1,4 @@
-import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ItemType, ServerIdentifier, ServerRegion, BankPackType, Dictionary, CONSTANTS } from "../internal";
+import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ItemType, ServerIdentifier, ServerRegion, Dictionary, CONSTANTS, BankPackName } from "../internal";
 
 export class MerchantScript extends ScriptBase<Merchant> {
     wasMoving: boolean;
@@ -141,7 +141,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             }
 
             for (let key in theirMind.character.items) {
-                if(+key > 34) //reserve bottom row 
+                if(+key > SETTINGS.MINIMUM_RESERVED_ITEM_INDEX) //reserve bottom row 
                     continue;
 
                 let item = theirMind.character.items[key];
@@ -319,7 +319,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
             if (key === "gold")
                 continue;
 
-            let bank = this.character.bank[<BankPackType>key];
+            let bank = this.character.bank[<Exclude<BankPackName, "gold">>key]
 
             if (bank == null || typeof (bank) == "number")
                 continue;
@@ -330,7 +330,7 @@ export class MerchantScript extends ScriptBase<Merchant> {
                     continue;
 
                 if (this.shouldWithdrawlItem(item)) {
-                    await this.character.withdrawItem(<Exclude<BankPackType, "gold">>key, +index);
+                    await this.character.withdrawItem(<Exclude<BankPackName, "gold">>key, +index);
                     return;
                 }
             }
