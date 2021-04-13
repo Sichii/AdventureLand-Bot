@@ -1,7 +1,7 @@
-import { Entity, HiveMind, PingCompensatedCharacter, PingCompensatedScript, ItemName, SETTINGS, Location, Dictionary, Game, List, Pathfinder, Point, PromiseExt, Utility, WeightedCircle, CommandManager, MonsterName, Logger, StringComparer, Player, Deferred, ItemInfo } from "../internal";
+import { Entity, HiveMind, PingCompensatedCharacter, PingCompensatedScript, ItemName, SETTINGS, Location, Dictionary, Game, List, Pathfinder, Point, PromiseExt, Utility, WeightedCircle, CommandManager, MonsterName, Logger, StringComparer, Player, Deferred, ItemInfo, Data, DateExt } from "../internal";
 
 export abstract class ScriptBase<T extends PingCompensatedCharacter> extends PingCompensatedScript {
-    lastConnect: Date;
+    lastConnect: DateExt;
     character: T;
     hiveMind: HiveMind;
     commandManager: CommandManager;
@@ -15,13 +15,11 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     }
 
     get readyToGo() {
-        for (let [name, settings] of SETTINGS.PARTY_SETTINGS) {
-            if (settings.assist == null || settings.assist !== this.character.name)
+        for(let [, theirMind] of this.hiveMind) {
+            if(theirMind.settings.assist == null || theirMind.settings.assist !== this.character.name)
                 continue;
 
-            let follower = this.hiveMind.getValue(name);
-
-            if (follower == null || follower.distance(this.character) > Math.max(follower.range * 2, 200))
+            if(theirMind.distance(this.character) > Math.max(theirMind.range * SETTINGS.RANGE_OFFSET, 200))
                 return false;
         }
 
@@ -48,7 +46,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         this.commandManager = new CommandManager(this);
         this.hiveMind = hiveMind;
         this.hiveMind.addOrSet(character.name, this);
-        this.lastConnect = new Date();
+        this.lastConnect = DateExt.utcNow;
 
         if (this.character.ctype !== "merchant") {
             this.loopAsync(() => this.lootAsync(), 1000 * 2);
@@ -60,6 +58,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         this.loopAsync(() => this.mainAsync(), this.settings.mainInterval);
         this.loopAsync(() => this.movementAsync(), this.settings.movementInterval, false, true);
+        this.loopAsync(async () => this.setBoss(), 1000 / 5, false, true);
 
         this.character.socket.on("code_eval", (data: string) => this.commandManager.handleCommand(data));
         this.character.socket.on("disconnect", () => this.reconnect());
@@ -72,13 +71,13 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         Logger.Error("Disconnected, attempting to reconnect...");
         await this.character.disconnect();
 
-        let msSinceLastConnect = Utility.msSince(this.lastConnect);
+        let msSinceLastConnect = DateExt.utcNow.subtract(this.lastConnect);
         let minimumMs = 1000 * 60;
         if (msSinceLastConnect < minimumMs)
             await PromiseExt.delay(minimumMs - msSinceLastConnect);
 
         try {
-            this.lastConnect = new Date();
+            this.lastConnect = DateExt.utcNow;
             let name = this.character.name;
             let server = this.character.server;
             let ctype = this.character.ctype;
@@ -134,21 +133,6 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
     }
 
-    locateReservedItem(predicate: (item: ItemInfo) => boolean) {
-        let item = this.items
-            .skip(SETTINGS.MINIMUM_RESERVED_ITEM_INDEX)
-            .firstOrDefault(item =>predicate(item));
-        if(!item)
-            return undefined;
-
-        let slot = this.items.indexOf(item);
-
-        if(slot === -1)
-            return undefined;
-
-        return { item: item, slot: slot };
-    }
-
     selectTarget() {
         const setTarget = (target?: Entity) => {
             this.target = target;
@@ -183,7 +167,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 if(currentTarget != null) {
                     //if we're targeting the boss
                     if(boss != null && boss.id === currentTarget.id)
-                        return setTarget(boss);
+                        return setTarget(currentTarget);
 
                     //if it wont burn to death, keep attacking it
                     if(!currentTarget.willBurnToDeath())
@@ -195,6 +179,8 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                     if(boss != null) {
                         //we should see the boss but we dont
                         if(this.shouldSee(boss)) {
+                            //signal that we killed the boss
+                            Data.bossHunt.addOrSet(this.hiveMind.boss?.type!, DateExt.utcNow);
                             this.hiveMind.boss = undefined;
                             this.target = undefined;
                         } else 
@@ -205,7 +191,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                     return setTarget(undefined);
                 }
             //if we dont have a target, we should be attacking a boss, and we arent being attacked by something else
-            } else if(this.hiveMind.boss != null && !beingAttacked)
+            } else if(this.hiveMind.boss != null)
                 return setTarget(this.hiveMind.boss);
 
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
@@ -259,10 +245,17 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         }
     }
 
-    async weightedMoveToEntityAsync(entity: Entity, maxDistance: number, ignoreMonsters = false) {
+    setBoss() {
+        let boss = this.entities.values.firstOrDefault(entity => SETTINGS.ATTACKABLE_BOSSES.contains(entity.type, StringComparer.IgnoreCase));
+
+        if(boss && (this.hiveMind.boss == null || this.hiveMind.boss.type === boss.type))
+            this.hiveMind.boss = boss;
+    }
+
+    async weightedMoveToEntityAsync(entity: Entity, maxDistance: number, ignoreMonsters = false, expand = true) {
         let location = Location.fromIPosition(entity);
 
-        let circle = new WeightedCircle(location, maxDistance, maxDistance / 10);
+        let circle = new WeightedCircle(location, maxDistance, maxDistance / 10, expand);
         let entities = this.entities
             .values
             .where(xEntity => xEntity != null && xEntity.id !== entity.id)
@@ -293,12 +286,12 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             return;
 
         if (leader.destination != null) {
-            await this.smartMove(leader.destination, { getWithin: this.range });
+            await this.smartMoveWhile(leader.destination, () => leader?.destination != null, { getWithin: this.range });
             return;
         }
 
-        if (!this.withinRange(leader.character, this.range * 2)) {
-            await this.pathToCharacter(leader, this.range);
+        if (!this.withinRange(leader.character, this.range * SETTINGS.RANGE_OFFSET)) {
+            await this.pathToCharacter(leader, this.range * 0.75);
             return;
         }
 
@@ -340,12 +333,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 
             let maxRange = this.range;
 
-            if(!this.settings.kite && target.target === this.character.id) {
+            if(!this.settings.kite && target.target === this.character.id)
                 maxRange = Math.min(maxRange, target.range);
-                maxRange *= 0.75;
-            }
 
-            await this.weightedMoveToEntityAsync(target, maxRange, !this.settings.kite);
+            await this.weightedMoveToEntityAsync(target, maxRange, !this.settings.kite, this.settings.kite);
         } else {
             //if we dont get a target within a reasonable amount of time
             let hasTarget = await PromiseExt.pollWithTimeoutAsync(async () => this.target != null, 1000);
@@ -482,7 +473,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                 .finally(() => deferred.resolve());
 
             while (!deferred.isResolved()) {
-                if (startingLocation.distance(script.character) > distance * 2)
+                if (startingLocation.distance(script.character) > distance)
                     break;
                 else
                     await PromiseExt.delay(100);

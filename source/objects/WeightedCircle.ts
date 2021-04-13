@@ -4,15 +4,18 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
     center: Location;
     radius: number;
 
-    constructor(center: Location, radius: number, stepSize: number) {
+    constructor(center: Location, radius: number, stepSize: number, expand = true) {
         super();
 
-        radius *= 1.5;
+        if(expand) {
+            radius *= 1.5;
+            stepSize *= 1.5;
+        }
 
         this.center = center;
         this.radius = radius;
 
-        stepSize = Math.ceil(stepSize * 1.5);
+        stepSize = Math.ceil(stepSize);
 
         let x1 = Math.ceil((center.x - radius) / stepSize);
         let x2 = Math.floor((center.x + radius) / stepSize);

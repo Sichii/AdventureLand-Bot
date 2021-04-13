@@ -10,6 +10,10 @@ export * from "alclient/build/definitions/pathfinder";
 
 export * from "./comparer/IEqualityComparer";
 export * from "./comparer/IEquatable";
+export * from "./interfaces/IIndexedItem";
+export * from "./interfaces/IBankedItem";
+export * from "./interfaces/ICompoundableSet";
+
 export * from "./comparer/CaseInsensitiveStringComparer";
 export * from "./comparer/CaseSensitiveStringComparer";
 export * from "./comparer/StringComparer";
@@ -22,6 +26,10 @@ export * from "./enumerable/DefaultEnumerableIterator";
 
 export * from "./collections/List";
 export * from "./collections/Dictionary";
+export * from "./helpers/DateExt";
+
+export * from "./data/IQuestData";
+export * from "./data/Data";
 
 export * from "./definitions/CONSTANTS";
 export * from "./definitions/Enums";

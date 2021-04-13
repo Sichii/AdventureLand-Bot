@@ -1,4 +1,4 @@
-import { PingCompensatedScript, Utility, CONSTANTS } from "../internal";
+import { PingCompensatedScript, Utility, CONSTANTS, DateExt } from "../internal";
 
 export class MetricManager {
     script: PingCompensatedScript;
@@ -6,7 +6,7 @@ export class MetricManager {
     prevGold: number;
     netExp: number;
     netGold: number;
-    startTime: Date;
+    startTime: DateExt;
 
     constructor(script: PingCompensatedScript) {
         this.script = script;
@@ -14,7 +14,7 @@ export class MetricManager {
         this.prevGold = script.character.gold;
         this.netExp = 0;
         this.netGold = 0;
-        this.startTime = new Date();
+        this.startTime = DateExt.utcNow;
 
         if(script.character.ctype !== "merchant")
             script.loopAsync(async () => this.update(), 5000, true);
@@ -35,12 +35,12 @@ export class MetricManager {
     }
 
     get expHr() {
-        let elapsedHrs = Utility.msSince(this.startTime) / CONSTANTS.HOUR_MS;
+        let elapsedHrs = DateExt.utcNow.subtractX(this.startTime).totalHours;
         return Math.floor(this.netExp / elapsedHrs);
     }
 
     get goldHr() {
-        let elapsedHrs = Utility.msSince(this.startTime) / CONSTANTS.HOUR_MS;
+        let elapsedHrs = DateExt.utcNow.subtractX(this.startTime).totalHours;
         return Math.floor(this.netGold / elapsedHrs);
     }
 

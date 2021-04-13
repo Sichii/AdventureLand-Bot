@@ -20,17 +20,17 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			return await PromiseExt.delay(2500);
 		}
 
-		if(this.character.s.fingered)
+		if (this.character.s.fingered)
 			return await PromiseExt.delay(250);
-		
+
 		if (await this.defenseAsync())
 			await this.offenseAsync();
 
 		return;
 	}
 
-	async movementAsync(){
-		if(this.settings.assist)
+	async movementAsync() {
+		if (this.settings.assist)
 			await this.followTheLeaderAsync();
 		else
 			await this.leaderMove();
@@ -49,23 +49,11 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			}
 		}
 
-		if(shouldUseDefensive()) {
+		if (shouldUseDefensive()) {
 			if (target!.damage_type === "physical" && this.character.canUse("hardshell")) {
-				await this.character.hardshell();					
-			} else if(!this.character.s.hardshell && this.character.canUse("stomp", { ignoreEquipped: true })) {	
-				let basherEquipped = this.character.slots.mainhand == null || Game.G.items[this.character.slots.mainhand.name].wtype !== "basher";
-				let basher = this.locateReservedItem(item => item != null && Game.G.items[item.name].wtype === "basher");
-
-				if(basherEquipped || basher) {
-					if(!basherEquipped)
-						await this.character.equip(basher!.slot);
-
-					await this.character.stomp();
-
-					if(!basherEquipped)
-						await this.character.equip(basher!.slot);
-				}
-			}
+				await this.character.hardshell();
+			} else if (!this.character.s.hardshell && this.character.canUse("stomp", { ignoreEquipped: true }))
+				await this.useSkill(() => this.character.stomp(), "basher");
 		}
 
 		if (this.character.canUse("taunt")) {
@@ -91,31 +79,19 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			return false;
 
 		//need to be careful about using this, can kill ourselves pretty easily
-		if (this.character.canUse("cleave")) {
-			let axeEquipped = this.character.slots.mainhand == null || Game.G.items[this.character.slots.mainhand.name].wtype === "axe";
-			let axe = this.locateReservedItem(item => item != null && Game.G.items[item.name].wtype === "axe");
+		if (this.character.canUse("cleave", { ignoreEquipped: true })) {
+			let entitiesInRange = this.entities
+				.values
+				.where(entity => this.withinSkillRange(entity, "cleave", true))
+				.toList();
 
-			if(axeEquipped || axe) {
-				let entitiesInRange = this.entities
-					.values
-					.where(entity => this.withinSkillRange(entity, "cleave", true))
-					.toList();
-
-				//only worth cleaving if we're going to hit more stuff
-				if (entitiesInRange.length >= 3) {
-					//if we expect more hps than incomming dps, we can cleave
-					//or everything in range is already targeting me
-					//safety margin of hppots, partyHeal, and hardShell
-					if (this.calculateIncomingDPS(entitiesInRange) < this.calculateIncomingHPS() || entitiesInRange.all(entity => entity.target === this.character.id)) {
-						if(!axeEquipped)
-							await this.character.equip(axe!.slot);
-
-						await this.character.cleave();
-
-						if(!axeEquipped)
-							await this.character.equip(axe!.slot);
-					}
-				}
+			//only worth cleaving if we're going to hit more stuff
+			if (entitiesInRange.length >= 3) {
+				//if we expect more hps than incomming dps, we can cleave
+				//or everything in range is already targeting me
+				//safety margin of hppots, partyHeal, and hardShell
+				if (this.calculateIncomingDPS(entitiesInRange) < this.calculateIncomingHPS() || entitiesInRange.all(entity => entity.target === this.character.id))
+					await this.useSkill(() => this.character.cleave(), "axe");
 			}
 		}
 

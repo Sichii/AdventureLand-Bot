@@ -2,7 +2,8 @@ import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType, Par
 
 export class SETTINGS {
     //#region Attack
-    static ATTACKABLE_BOSSES = new List<MonsterName>(["snowman", "wabbit", "greenjr", "jr", "mvampire", "goldenbat", "phoenix"]);
+    static ATTACKABLE_BOSSES = new List<MonsterName>(["greenjr", "jr", "mvampire", "goldenbat", "phoenix", "cutebee"]);
+    //static SEEK_BOSSES = new List<MonsterName>(["mvampire", "goldenbat", "phoenix"]);
     //#endregion
 
     //#region Movement
@@ -80,7 +81,7 @@ export class SETTINGS {
     //#region Thresholds
     static MERCHANT_GOLD_TO_HOLD = 50000000;
     static MERCHANT_MIN_GOLD = 10000000;
-    static MERCHANT_VISIT_PARTY_EVERY = 1000 * 60 * 5; //15mins
+    static MERCHANT_VISIT_PARTY_EVERY_MS = 1000 * 60 * 15; //15mins
     static PRIEST_HEAL_AT = 0.75;
     static HP_POT_AT = 0.5;
     static MP_POT_AT = 0.75;
@@ -90,6 +91,7 @@ export class SETTINGS {
     static MAX_COMPOUND_LEVEL = 3;
     static MAX_UPGRADE_LEVEL = 7;
     static MINIMUM_RESERVED_ITEM_INDEX = 34;
+    static RANGE_OFFSET = 1.5;
     //#endregion
 
     //#region Buy
@@ -113,25 +115,30 @@ export class SETTINGS {
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
         //"ctristone", "vitring"
-        "wbook0", "intearring", "dexearring", "strearring", //"ctristone"
+        "wbook0",
+        //t1 earrings 
+        "intearring", "dexearring", "strearring", "vitearring",
+        //t1 belts
+        "intbelt", "dexbelt", "strbelt",
+        //t2 amulets
+        "t2intamulet", "t2dexamulet", "t2stramulet",
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
-        "handofmidas", "firestaff", "mcape", "quiver",
-        "fireblade", "froststaff", "t2bow", "firebow",
-        "eslippers", "ecape", "oozingterror", "harbringer", "bataxe",
+        "handofmidas", "bataxe",
+         "mcape", "quiver",
+        "t2bow", "gphelmet",
+        "eslippers", "ecape", "oozingterror", "harbringer",
         "throwingstars", "basher", "crossbow",
 
         //darkforge armor
-        "xarmor", "xhelmet", "xpants", "xgloves", "xboots"
-    ]);
-
-    static ITEMS_TO_DEPOSIT = new List<ItemName>([
-        "cxjar", "seashell", "cryptkey", "scroll3", "scroll4", "cscroll3", "vitscroll",
-        "elixirdex0", "elixirint0", "elixirstr0", "elixirvit0", "elixirdex1", "elixirint1", "elixirstr1", "elixirvit1", "elixirfires", "snakeoil",
-        "mbelt", "rabbitsfoot",
-        "vitearring", "forscroll", "sanguine",
-        "suckerpunch", "fury", "starkillers"
+        "xarmor", "xhelmet", "xpants", "xgloves", "xboots",
+        //frost weapons
+        "froststaff", "frostbow",
+        //fire weapons
+        "fireblade", "firebow", //"firestaff", 
+        //bone weapons
+        "swordofthedead", "daggerofthedead", "staffofthedead", "bowofthedead", "maceofthedead",
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
@@ -147,14 +154,16 @@ export class SETTINGS {
     static ITEMS_TO_SELL = new List<ItemName>([
         //easter armor
         "epyjamas", "eears", "pinkie", "carrotsword",
-        //random low level junk
+        //junk
         "hpbelt", "hpamulet", "ringsj", "cclaw", "crabclaw",
         "spear", "pmace", "hammer", "rapier", "sword", "dagger",
+        "phelmet", "smoke", "throwingstars", "mushroomstaff",
 
-        //tier 1 armor
+        //t1 armor
         "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
-
-        //stat amulets
+        //t1 weapons
+        "blade", "staff",
+        //t1 amulets
         "intamulet", "dexamulet", "stramulet",
 
         //rugged armor
@@ -166,11 +175,16 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_EXCHANGE = new List<ItemName>([
-        "candy0", "candy1", "gem0", "armorbox", "weaponbox", "goldenegg"
+        "candy0", "candy1", "gem0", "armorbox", "weaponbox", "goldenegg",
+        "gemfragment",
     ]);
 
     static ITEMS_TO_CRAFT = new List<ItemName>([
-        "firebow", //"ctristone", //"elixirfires"
+        "firebow", "ctristone", //"elixirfires"
+    ]);
+
+    static ITEMS_TO_DISMANTLE = new List<ItemName>([
+        "firestaff"
     ]);
 
     static readonly ITEM_TYPES_TO_KEEP = new List<ItemType>([

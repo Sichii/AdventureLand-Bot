@@ -11,6 +11,10 @@ export class Dictionary<TKey, TValue> extends EnumerableBase<[TKey, TValue]> {
         return new DefaultEnumerableIterator(this.items.values());   
     }
 
+    get length() {
+        return this.items.size;
+    }
+
     constructor(dictionary: Dictionary<TKey, TValue>);
     constructor(items: Map<TKey, TValue>);
     constructor();

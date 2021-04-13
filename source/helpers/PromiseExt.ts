@@ -1,4 +1,4 @@
-import { List, Logger, Utility } from "../internal";
+import { DateExt, List, Logger, Utility } from "../internal";
 
 export class PromiseExt {
     static delay(timeoutMs: number) {
@@ -29,10 +29,10 @@ export class PromiseExt {
     }
 
     static pollWithTimeoutAsync(func: () => Promise<boolean>, timeoutMs: number) {
-        let start = new Date();
+        let start = DateExt.utcNow;
 
         let pollFunc = async () => {
-            while (Utility.msSince(start) < timeoutMs) {
+            while (DateExt.utcNow.subtract(start) < timeoutMs) {
                 if (await func())
                     return true;
                 

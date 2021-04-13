@@ -41,10 +41,10 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
         return false;
     }
 
-    count(predicate: (item: T) => boolean) {
+    count(predicate?: (item: T) => boolean) {
         let count = 0;
         for(let item of this)
-            if(predicate(item))
+            if(predicate?.(item) ?? true)
                 count++;
 
         return count;
@@ -128,6 +128,16 @@ export abstract class EnumerableBase<T> implements IEnumerable<T> {
     private *selectIterator<TResult>(selector: (item: T) => TResult) {
         for(let item of this)
             yield selector(item);
+    }
+
+    selectMany<TResult>(selector: (item: T) => IEnumerable<TResult>): IEnumerable<TResult> {
+        return new DefaultEnumerableIterator(this.selectManyIterator(selector));
+    }
+
+    private *selectManyIterator<TResult>(selector: (item: T) => IEnumerable<TResult>) {
+        for(let item of this)
+            for(let itemx of selector(item))
+                yield itemx;
     }
 
     where(predicate: (item: T) => boolean): IEnumerable<T> {

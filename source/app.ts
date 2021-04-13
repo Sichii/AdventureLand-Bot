@@ -1,11 +1,11 @@
-import { Game, HiveMind, Logger, MerchantScript, Pathfinder, PriestScript, RangerScript, WarriorScript } from "./internal";
+import { Game, HiveMind, Logger, MerchantScript, Data, Pathfinder, PriestScript, RangerScript, WarriorScript } from "./internal";
 
 async function main() {
     try {
-        console
         let initialize_pathfinder = Pathfinder.prepare();
         let login = Game.loginJSONFile("credentials.json");
         await Promise.all([initialize_pathfinder, login]);
+        Data.populate();
 
         const hiveMind = new HiveMind();
         const merchant = await MerchantScript.startAsync("sichi", "US", "II", hiveMind);

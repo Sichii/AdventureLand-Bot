@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { SETTINGS, Logger, LogLevel, MerchantScript, PingCompensatedScript, PingCompensatedCharacter, ScriptBase } from "../internal";
+import { SETTINGS, Logger, LogLevel, MerchantScript, PingCompensatedScript, PingCompensatedCharacter, ScriptBase, DateExt } from "../internal";
 
 export class CommandManager {
     script: ScriptBase<PingCompensatedCharacter>;
@@ -22,8 +22,9 @@ ${data}`);
     visitParty() {
         let merchant = this.script.as<MerchantScript>("MerchantScript");
 
-        if (merchant != null)
-            merchant.visitParty = true;
+        if (merchant != null) {
+            merchant.lastVisitParty = DateExt.utcNow.subtractHours(1);
+        }
     }
 
     showMetrics() {

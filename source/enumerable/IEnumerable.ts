@@ -6,7 +6,7 @@ export interface IEnumerable<T> extends Iterable<T> {
     all(predicate: (item: T) => boolean): boolean;
     any(predicate?: (item: T) => boolean): boolean;
     contains(item: T, comparer?: IEqualityComparer<T>): boolean;
-    count(predicate: (item: T) => boolean): number;
+    count(predicate?: (item: T) => boolean): number;
     elementAt(index: number): T | undefined;
     sum(selector: (item: T) => number): number | undefined;
     max(selector: (item: T) => number): T | undefined;
@@ -14,6 +14,7 @@ export interface IEnumerable<T> extends Iterable<T> {
     
     //iterators
     select<TResult>(selector: (item: T) => TResult): IEnumerable<TResult>;
+    selectMany<TResult>(selector: (item: T) => IEnumerable<TResult>): IEnumerable<TResult>;
     where(predicate: (item: T) => boolean): IEnumerable<T>;
     concat(items: Iterable<T>): IEnumerable<T>;
     except(items: Iterable<T>): IEnumerable<T>;

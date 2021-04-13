@@ -1,4 +1,4 @@
-import { NodeData, MapName, MonsterName, NPCName, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, CONSTANTS, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List } from "../internal";
+import { NodeData, MapName, MonsterName, NPCName, Dictionary, HiveMind, KindBase, MetricManager, PingCompensatedCharacter, Point, Location, PromiseExt, Logger, CONSTANTS, SETTINGS, Entity, IPosition, SkillName, Game, Utility, Pathfinder, WeightedCircle, CommandManager, ItemName, List, WeaponType, ItemInfo, Deferred, DateExt } from "../internal";
 
 export abstract class PingCompensatedScript extends KindBase {
     character: PingCompensatedCharacter;
@@ -55,7 +55,12 @@ export abstract class PingCompensatedScript extends KindBase {
     }
 
     get isBeingAttacked() {
-        return this.entities.values.any(entity => entity.target === this.character.id && this.distance(entity) <= entity.range);
+        return this.entities.values.any(entity => entity.target === this.character.id);
+    }
+
+    get couldBeAttacked() {
+        return this.entities.values.any(entity => (entity.target === this.character.id || entity.rage != null) 
+            && this.distance(entity) <= entity.range + ((entity.charge ?? entity.speed) * 8));
     }
 
     constructor(character: PingCompensatedCharacter) {
@@ -74,9 +79,8 @@ export abstract class PingCompensatedScript extends KindBase {
             try {
                 if (!this.isConnected)
                     await PromiseExt.delay(5000);
-                else if (this.destination != null && !ignoreSmartMove && !this.isBeingAttacked) {
+                else if (this.destination != null && !ignoreSmartMove) 
                     await PromiseExt.delay(250);
-                }
                 else {
                     await func();
                     await PromiseExt.delay(msMinDelay);
@@ -111,7 +115,7 @@ export abstract class PingCompensatedScript extends KindBase {
         let expectedElixir = SETTINGS.PARTY_SETTINGS.getValue(this.character.name)?.elixir ?? <ItemName>"";
         let elixirSlot = this.character.locateItem(expectedElixir);
 
-        if (elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(Utility.msSince(new Date(this.character.slots.elixir.expires))) < 1000))
+        if (elixirSlot != null && (this.character.slots.elixir?.expires == null || Math.abs(DateExt.utcNow.subtract(new DateExt(this.character.slots.elixir.expires))) < 1000))
             await this.character.equip(elixirSlot);
 
         if (this.mpPct < SETTINGS.MP_POT_AT && this.character.canUse("use_mp")) {
@@ -221,14 +225,90 @@ export abstract class PingCompensatedScript extends KindBase {
         if (options?.getWithin != null)
             options.getWithin *= 0.95;
 
-        await this.character.smartMove(to, options)
-            .then(undefined, async (reason) => {
-                if (reason === "warpToTown failed.") {
-                    options!.avoidTownWarps = true;
-                    Logger.Warn("Attempting to path without warping...");
-                    await this.character.smartMove(to, options);
-                }
-            })
-            .finally(() => this.destination = undefined);
+        try {
+            if(this.couldBeAttacked) {
+                options.avoidTownWarps = true;
+                //path till we reach our destination, or we're not being attacked
+                await Promise.any<any>([this.character.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !this.couldBeAttacked, 1000 * 10)]);    
+            } else
+                await this.character.smartMove(to, options);
+        } finally {
+            this.destination = undefined;
+        }
+    }
+
+    async smartMoveWhile(to: MapName | MonsterName | NPCName | IPosition, condition: () => boolean, options?: {
+        getWithin?: number;
+        useBlink?: boolean;
+        avoidTownWarps?: boolean;
+    }): Promise<NodeData | void> {
+        await Promise.any<any>([this.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !condition(), 60000)]);
+    }
+
+    dismantle(slot: number) {
+        this.character.socket.emit("dismantle", { num: slot });
+    }
+
+    locateReservedItem(predicate: (item: ItemInfo) => boolean) {
+        let item = this.items
+            .skip(SETTINGS.MINIMUM_RESERVED_ITEM_INDEX)
+            .firstOrDefault(item =>predicate(item));
+        if(!item)
+            return undefined;
+
+        let slot = this.items.indexOf(item);
+
+        if(slot === -1)
+            return undefined;
+
+        return { item: item, slot: slot };
+    }
+
+    async useSkill(skillFunc: () => Promise<any>, wType?: WeaponType) {
+        if(!wType)
+            return await skillFunc();
+
+        let equippedMainhand = this.character.slots.mainhand;
+        let equippedOffhand = this.character.slots.offhand;
+        let gMainType: WeaponType | undefined;
+        let gOffType: WeaponType | undefined;
+
+        if(equippedMainhand)
+            gMainType = Game.G.items[equippedMainhand.name].wtype;
+
+        if(equippedOffhand)
+            gOffType = Game.G.items[equippedOffhand.name].wtype;
+
+        if(equippedMainhand == null || gMainType !== wType) {
+            let itemToEquip = this.locateReservedItem(item => {
+                if(item == null)
+                    return false;
+
+                return Game.G.items[item.name].wtype === wType;
+            });
+
+            if(itemToEquip == null)
+                return;
+
+            //TODO: need property "a" on GItem
+            //need to unequip offhand for 2h types
+            if(equippedOffhand != null && (wType === "axe" || wType === "basher"))
+                await this.character.unequip("offhand");
+
+            await this.character.equip(itemToEquip.slot);
+        }
+
+        await skillFunc();
+
+        if(equippedMainhand != null && gMainType !== wType) {
+            let mainHandSlot = this.character.locateItem(equippedMainhand.name, undefined, { level: equippedMainhand.level });
+            await this.character.equip(mainHandSlot, "mainhand");
+        }
+
+        //if we had an offhand on, and we needed to equip a 2h
+        if(equippedOffhand != null && (wType === "axe" || wType === "basher")) {
+            let offHandSlot = this.character.locateItem(equippedOffhand.name, undefined, { level: equippedOffhand.level });
+            await this.character.equip(offHandSlot, "offhand");
+        }
     }
 }

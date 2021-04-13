@@ -1,8 +1,8 @@
-import { DeferredResult, DeferredState } from "../internal";
+import { DateExt, DeferredResult, DeferredState } from "../internal";
 
 export class Deferred<T> {
     public promise: Promise<T>;
-    public when: Date;
+    public when: DateExt;
     private result: DeferredResult;
     private state: DeferredState;
 
@@ -14,7 +14,7 @@ export class Deferred<T> {
         this.result = DeferredResult.Unresolved;
         this._resolve = (value: any) => { };
         this._reject = (value: any) => { };
-        this.when = new Date();
+        this.when = DateExt.utcNow;
 
         this.promise = new Promise((resolve, reject) => {
             this._resolve = resolve;
