@@ -1,4 +1,4 @@
-import { List, Point, Location, Player, Entity, CONSTANTS } from "../internal";
+import { List, Point, Location, Player, Entity, CONSTANTS, ScriptBase, PingCompensatedCharacter, PingCompensatedScript } from "../internal";
 
 export class WeightedCircle extends List<{location: Location, weight: number}> {
     center: Location;
@@ -35,10 +35,10 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
         }
     }
 
-    applyWeight(entities: List<Entity>, players: List<Player>, weightedCenter: Point, ignoreMonsters: boolean) {
+    applyWeight(entities: List<Entity>, players: List<Player>, source: PingCompensatedScript, ignoreMonsters: boolean) {
         for(let entry of this) {
             let distanceFromCenter = entry.location.point.distance(this.center);
-            let distanceToCurrent = entry.location.point.distance(weightedCenter);
+            let distanceToCurrent = entry.location.point.distance(source.point);
 
             //WEIGHT: LOWER IS BETTER
             //closer points are better
@@ -54,7 +54,14 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
                     let entityPoint = Point.fromIPosition(entity);
                     let distanceToEntity = entry.location.point.distance(entityPoint);
                     //this is the size of the effect
-                    let range = Math.max(((entity.rage ? entity.range : CONSTANTS.ENTITY_WIDTH * 2) + entity.speed) - distanceToEntity, 0);
+                    let entitySpeed = entity.speed;
+
+                    if(entity.target == null || entity.target !== source.character.id)
+                        entitySpeed = CONSTANTS.ENTITY_WIDTH;
+                    else if(entity.charge != null && entity.charge === entity.speed)
+                        entitySpeed /= 3;
+
+                    let range = Math.max(((entity.rage ? entity.range : CONSTANTS.ENTITY_WIDTH * 2) + entitySpeed) - distanceToEntity, 0);
 
                     //give this a high initial weight, so even the outer edges will push players around
                     entry.weight += (range + CONSTANTS.ENTITY_WIDTH) ** 3;                    
@@ -62,7 +69,7 @@ export class WeightedCircle extends List<{location: Location, weight: number}> {
             }
 
             for (let player of players) {
-                if(player == null)
+                if(player == null || player.npc != null)
                     continue;
 
                 let playerPoint = Point.fromIPosition(player);

@@ -70,7 +70,7 @@ export class Point extends KindBase {
         return (a * a) + (b * b);
     }
 
-    directionalRelationTo(other: Point) {
+    directionalRelationTo(other: Point | IPosition) {
         if(other == null)
             throw new ReferenceError("other point is null when getting directional relation");
 

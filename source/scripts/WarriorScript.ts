@@ -1,4 +1,4 @@
-import { SETTINGS, Game, HiveMind, PromiseExt, ScriptBase, ServerIdentifier, ServerRegion, Location, Warrior, Pathfinder, List, Dictionary, Utility, Point, ItemInfo } from "../internal";
+import { Logger, SETTINGS, Game, HiveMind, PromiseExt, ScriptBase, ServerIdentifier, ServerRegion, Location, Warrior, Pathfinder, List, Dictionary, Utility, Point, ItemInfo } from "../internal";
 
 export class WarriorScript extends ScriptBase<Warrior> {
 	constructor(character: Warrior, hiveMind: HiveMind) {
@@ -31,7 +31,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 
 	async movementAsync() {
 		if (this.settings.assist)
-			await this.followTheLeaderAsync();
+			await this.assistMove();
 		else
 			await this.leaderMove();
 	}
@@ -42,7 +42,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		const shouldUseDefensive = () => {
 			if (this.hpPct < SETTINGS.PRIEST_HEAL_AT) {
 
-				if (target != null && (this.calculateIncomingDPS() * 2) > this.character.hp)
+				if (target != null && (this.calculateIncomingDPS(true, false) * 2) > this.character.hp)
 					return true;
 
 				return false;
@@ -79,10 +79,10 @@ export class WarriorScript extends ScriptBase<Warrior> {
 			return false;
 
 		//need to be careful about using this, can kill ourselves pretty easily
-		if (this.character.canUse("cleave", { ignoreEquipped: true })) {
+		if (this.character.canUse("cleave", { ignoreEquipped: true }) && this.okToUseMultiTargetSkills) {
 			let entitiesInRange = this.entities
 				.values
-				.where(entity => this.withinSkillRange(entity, "cleave", true))
+				.where(entity => this.withinSkillRange(entity, "cleave", this.settings.safeRangeCheckEnabled))
 				.toList();
 
 			//only worth cleaving if we're going to hit more stuff
@@ -90,8 +90,14 @@ export class WarriorScript extends ScriptBase<Warrior> {
 				//if we expect more hps than incomming dps, we can cleave
 				//or everything in range is already targeting me
 				//safety margin of hppots, partyHeal, and hardShell
-				if (this.calculateIncomingDPS(entitiesInRange) < this.calculateIncomingHPS() || entitiesInRange.all(entity => entity.target === this.character.id))
+				let incDps = this.calculateIncomingDPS(true, false, entitiesInRange);
+				let incHps = this.calculateIncomingHPS();
+
+				if (incDps < incHps || entitiesInRange.all(entity => entity.target != null && entity.target === this.character.id)) {
+					if(incDps > incHps)
+						Logger.Warn(`Cleaved while incDps: ${incDps.toFixed(0)}, incHps: ${incHps.toFixed(0)}`);
 					await this.useSkill(() => this.character.cleave(), "axe");
+				}
 			}
 		}
 

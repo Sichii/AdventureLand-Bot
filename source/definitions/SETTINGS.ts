@@ -2,7 +2,7 @@ import { List, Dictionary, MonsterName, ItemName, Location, Point, ItemType, Par
 
 export class SETTINGS {
     //#region Attack
-    static ATTACKABLE_BOSSES = new List<MonsterName>(["greenjr", "jr", "mvampire", "goldenbat", "phoenix", "cutebee"]);
+    static ATTACKABLE_BOSSES = new List<MonsterName>(["greenjr", "jr", "mvampire", "goldenbat", "phoenix", "cutebee", "stompy"]);
     //static SEEK_BOSSES = new List<MonsterName>(["mvampire", "goldenbat", "phoenix"]);
     //#endregion
 
@@ -31,7 +31,7 @@ export class SETTINGS {
                     safeRangeCheckEnabled: false,
                     kite: false,
                     attackMTypes: new List<MonsterName>([
-                        "mole"
+                        "wolf"
                     ]),
                     originalGear: new List<ItemName>([
                         "bataxe", "mwgloves"
@@ -182,7 +182,7 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_CRAFT = new List<ItemName>([
-        "firebow", "ctristone", //"elixirfires"
+        "fireblade", "ctristone", //"elixirfires"
     ]);
 
     static ITEMS_TO_DISMANTLE = new List<ItemName>([

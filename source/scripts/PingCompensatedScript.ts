@@ -55,12 +55,22 @@ export abstract class PingCompensatedScript extends KindBase {
     }
 
     get isBeingAttacked() {
-        return this.entities.values.any(entity => entity.target === this.character.id);
+        return this.entities.values.any(entity => entity.target != null && entity.target === this.character.id);
     }
 
     get couldBeAttacked() {
-        return this.entities.values.any(entity => (entity.target === this.character.id || entity.rage != null) 
-            && this.distance(entity) <= entity.range + ((entity.charge ?? entity.speed) * 8));
+        return this.entities.values.any(entity => {
+            if(entity.target == null && !entity.rage)
+                return false;
+
+            let safeRange = 0;
+
+            //if it's targeting us, or walking in our general direction
+            if(entity.target === this.character.id || this.point.directionalRelationTo(entity) === new Point(entity.going_x, entity.going_y).directionalRelationTo(entity))
+                safeRange = (entity.speed * 5) + entity.range; 
+
+            return this.distance(entity) < safeRange;
+        });
     }
 
     constructor(character: PingCompensatedCharacter) {
@@ -201,7 +211,7 @@ export abstract class PingCompensatedScript extends KindBase {
         if (range == null)
             return true;
 
-        return this.distance(entity) < ((safetyCheck && this.settings.safeRangeCheckEnabled) ? range * 1.05 : range);
+        return this.distance(entity) < ((safetyCheck && this.settings.safeRangeCheckEnabled) ? range * 1.1 : range);
     }
 
     attackVs(entity: Entity) {

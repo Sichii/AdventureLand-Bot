@@ -26,7 +26,7 @@ export class RangerScript extends ScriptBase<Ranger> {
 
     async movementAsync() {
 		if(this.settings.assist)
-			await this.followTheLeaderAsync();
+			await this.assistMove();
 		else
 			await this.leaderMove();
     }
@@ -53,7 +53,7 @@ export class RangerScript extends ScriptBase<Ranger> {
         if (target == null)
             return false;
 
-        if (this.character.canUse("3shot")) {
+        if (this.character.canUse("3shot") && this.okToUseMultiTargetSkills) {
             let possibleTargets = this.entities
                 .values
                 .where(entity => entity != null 
@@ -94,7 +94,7 @@ export class RangerScript extends ScriptBase<Ranger> {
                 
                 //if we're hitting new targets, make sure we can handle it
                 if(!requireCheck 
-                    || (this.calculateIncomingDPS(targets) <= this.calculateIncomingHPS() 
+                    || (this.calculateIncomingDPS(true, false, targets) <= this.calculateIncomingHPS() 
                         && (targets.find(0).max_hp < this.character.attack * 2 || targets.any(entity => entity.hp < this.attackVs(entity) * 0.7)))) {
                     await this.character.threeShot(targets.find(0).id, targets.find(1).id, targets.find(2).id);
                     return true;

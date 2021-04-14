@@ -43,6 +43,13 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             .firstOrDefault(player => player.ctype === "priest" && player.party === this.character.party); 
     }
 
+    get okToUseMultiTargetSkills() {
+        return this.hiveMind.boss == null 
+            || this.character.target === this.hiveMind.boss.id 
+            || this.entities
+                .count(([, entity]) => entity.isAttackingPartyMember(this.character)) >= 3;
+    }
+
     constructor(character: T, hiveMind: HiveMind) {
         super(character);
         this.Kind.add("ScriptBase");
@@ -172,24 +179,21 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                         return setTarget(currentTarget);
 
                     return setTarget(undefined);
-                } else { //we cant see our target
-                    //we should be attacking the boss
-                    if(boss != null) {
+                //if the boss isnt null and we're targeting it
+                } else { 
+                    if(boss != null && this.target != null && boss.id === this.target.id && this.shouldSee(boss)) {
+                        //we should be attacking the boss
                         //we should see the boss but we dont
-                        if(this.shouldSee(boss)) {
-                            //signal that we killed the boss
-                            Data.bossHunt.addOrSet(this.hiveMind.boss?.type!, DateExt.utcNow);
-                            this.hiveMind.boss = undefined;
-                            this.target = undefined;
-                        } else 
-                            return setTarget(boss);
+                        //signal that we killed the boss
+                        Data.bossHunt.addOrSet(this.hiveMind.boss?.type!, DateExt.utcNow);
+                        this.hiveMind.boss = undefined;
                     }
 
-                    //we cant see our target
+                    //our target is probably dead
                     return setTarget(undefined);
                 }
             //if we dont have a target, we should be attacking a boss, and we arent being attacked by something else
-            } else if(this.hiveMind.boss != null)
+            } else if(this.hiveMind.boss != null && !this.isBeingAttacked)
                 return setTarget(this.hiveMind.boss);
 
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
@@ -269,7 +273,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             .where(xPlayer => xPlayer != null && !xPlayer.npc && xPlayer.id !== this.character.id)
             .toList();
 
-        circle.applyWeight(entities, players, this.point, ignoreMonsters);
+        circle.applyWeight(entities, players, this, ignoreMonsters);
 
         let bestPoint = circle.orderBy(entry => entry.weight).firstOrDefault(entry => Pathfinder.canWalkPath(entry.location, this.location))?.location;
 
@@ -281,7 +285,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             await this.smartMove(location, { getWithin: this.range });
     }
 
-    async followTheLeaderAsync() {
+    async assistMove() {
         if (this.character.rip)
             return;
 
@@ -335,9 +339,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             //and we're faster than our target
             //and we outrange our target
             //and we have a fairly significant range
-            if(this.settings.kite 
+            let takingBigDamage = this.calculateIncomingDPS(false, false, [target]) > this.calculateIncomingHPS();
+            if((this.settings.kite || takingBigDamage) 
                 && this.character.speed > target.speed 
-                && this.range > target.range
+                && (this.range > target.range || takingBigDamage)
                 && (!isBoss || attackingUs))
                 if(await this.circleKiteAsync())
                     return;
@@ -398,7 +403,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         //we want to generally be in range of whatever we target
         //we can do bigger circles if the monster is faster
-        let maxRadius = (this.range/2) + (target.range/2);
+        let maxRadius = (Math.max(this.range, 150) / 2) + (target.range/2);
 
         //get the closest spawn bounds of our target monster
         //get the center point, and smallest dimension of those bounds
@@ -501,7 +506,8 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         return hps;
     }
 
-    calculateIncomingDPS(entities: Iterable<Entity> = this.entities.values.where(entity => entity.target === this.character.id)) {
+    calculateIncomingDPS(ignoreDefensives = false, ignoreStunned = true, entities: Iterable<Entity> = this.entities.values
+        .where(entity => entity.target != null && entity.target === this.character.id), ) {
         let dps = 0;
 
         if(this.character.s.burned) {
@@ -519,15 +525,17 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         let armor = this.character.armor;
         let resistance = this.character.resistance;
 
-        if(this.character.s.hardshell)
-            armor -= Game.G.conditions.hardshell.armor!;
+        if(ignoreDefensives) {
+            if(this.character.s.hardshell)
+                armor -= Game.G.conditions.hardshell.armor!;
 
-        if(this.character.s.fingered)
-            resistance -= Game.G.conditions.fingered.resistance!;
+            if(this.character.s.fingered)
+                resistance -= Game.G.conditions.fingered.resistance!;
+        }
 
         for(let entity of entities) {
             //ignore things that will be stunned for longer than a second
-            if(entity.s.stunned != null && entity.s.stunned.ms > 1000)
+            if(ignoreStunned && entity.s.stunned != null && entity.s.stunned.ms > 1000)
                 continue; 
 
             let entityDPS = entity.attack * entity.frequency;

@@ -26,7 +26,7 @@ export class PriestScript extends ScriptBase<Priest> {
 
     async movementAsync() {
         if(this.settings.assist)
-            await this.followTheLeaderAsync();
+            await this.assistMove();
         else
             await this.leaderMove();
     }
