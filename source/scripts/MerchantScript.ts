@@ -16,8 +16,8 @@ export class MerchantScript extends ScriptBase<Merchant> {
         this.lastVisitParty = DateExt.utcNow;
         this.lastBossHunt = DateExt.utcNow.subtractHours(1);
 
-        //PromiseExt.loopAsync(() => this.buyFromPontyAsync(), 1000 * 60 * 1);
         this.loopAsync(() => this.luckBuffNearbyAsync(), 1000);
+        PromiseExt.setIntervalAsync(() => this.managePartyAsync(), 5000);
     }
 
     static async startAsync(name: string, region: ServerRegion, id: ServerIdentifier, hiveMind: HiveMind) {
@@ -50,8 +50,6 @@ export class MerchantScript extends ScriptBase<Merchant> {
             }
 
             this.lastVisitParty = DateExt.utcNow;
-        } else if (false) {
-            //TODO: add dismantle logic
         } else if (this.shouldGoCraft()) {
             await this.smartMove("craftsman", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 });
             await this.craftItemsAsync();
@@ -61,8 +59,10 @@ export class MerchantScript extends ScriptBase<Merchant> {
         } else if (this.shouldExchangeItems()) {
             await this.exchangeItemsAsync();
         } else {
-            if (this.distance(SETTINGS.MERCHANT_STAND_LOCATION) > 10)
+            if (this.distance(SETTINGS.MERCHANT_STAND_LOCATION) > 10) {
                 await this.smartMove(SETTINGS.MERCHANT_STAND_LOCATION);
+                return;
+            }
 
             await this.buyPotionsAsync();
             await this.buyScrollsAsync();
@@ -173,9 +173,35 @@ export class MerchantScript extends ScriptBase<Merchant> {
             }
         }
     }
+
+    async managePartyAsync() {
+        let merchant = this.hiveMind.getValue(SETTINGS.MERCHANT_NAME);
+
+        if (!merchant)
+            return;
+
+        let leader = merchant.character;
+
+        if(leader == null)
+            return;
+
+        let members = this.hiveMind.values
+            .select(script => script.character)
+            .where(character => character.id !== leader.id && character.party !== leader.name);
+
+        for(let member of members) {
+            leader.sendPartyInvite(member.id)
+            await PromiseExt.delay(500);
+            await member.acceptPartyInvite(leader.id);
+        }
+    }
     //#endregion
 
     //#region Dismantle
+    dismantle(slot: number) {
+        this.character.socket.emit("dismantle", { num: slot });
+    }
+
     shouldGoDismantle() {
         return this.items.any(item => item != null && this.shouldDismantle(item));
     }
@@ -319,22 +345,25 @@ export class MerchantScript extends ScriptBase<Merchant> {
         for (let recipeName of SETTINGS.ITEMS_TO_CRAFT) {
             let recipe = Game.G.craft[recipeName];
 
-            if (!recipe)
+            if (recipe == null)
                 continue;
 
             let canCraft = true;
             let itemsToWithdrawl = new List<IBankedItem>();
 
-            //for each recipe we are interested in crafting
+            //for each item requirement of this recipe
             for (let [quantity, name, level] of recipe.items) {
                 let currentQ = 0;
 
                 //for each inventory item
                 for(let index in this.character.items) {
-                    if(currentQ < quantity)
+                    if(currentQ >= quantity)
                         break;
 
                     let item = this.character.items[index];
+
+                    if(item == null)
+                        continue;
 
                     //if it's a required component, tally up what we have
                     if(item.name === name && (item.level ?? 0) === (level ?? 0))
@@ -343,8 +372,11 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
                 //for each bank item
                 for (let bankedItem of bankedItems) {
-                    if(currentQ < quantity)
+                    if(currentQ >= quantity)
                         break;
+
+                    if(bankedItem == null)
+                        continue;
 
                     //if it's a required component, tally up what we have
                     if (bankedItem.item.name === name && (bankedItem.item.level ?? 0) === (level ?? 0)) {

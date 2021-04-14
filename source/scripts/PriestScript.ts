@@ -15,11 +15,13 @@ export class PriestScript extends ScriptBase<Priest> {
     }
 
     async mainAsync() {
-        if (this.character.rip) {
-            this.character.respawn();
-            await PromiseExt.delay(2500);
-        }else if (await this.defenseAsync())
-            await this.offenseAsync();
+		if (this.character.rip) {
+			this.character.respawn();
+			return await PromiseExt.delay(2500);
+		}
+
+		if (await this.defenseAsync() && this.destination == null && this.readyToGo)
+			await this.offenseAsync();
     }
 
     async movementAsync() {

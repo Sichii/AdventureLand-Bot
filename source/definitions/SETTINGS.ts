@@ -126,7 +126,7 @@ export class SETTINGS {
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
         "handofmidas", "bataxe",
-         "mcape", "quiver",
+        "mcape", "quiver",
         "t2bow", "gphelmet",
         "eslippers", "ecape", "oozingterror", "harbringer",
         "throwingstars", "basher", "crossbow",
@@ -147,8 +147,10 @@ export class SETTINGS {
 
     static ITEMS_TO_BUY_FROM_PONTY = new List<ItemName>([
         "intearring", "dexearring", "strearring", "vitearring",
-        "mbelt",
-        "fireblade", "froststaff", "t2bow",
+        "mbelt", "t2bow", "wbook0",
+
+        //fire weapons
+        "fireblade", "firestaff", "firebow",
     ]);
 
     static ITEMS_TO_SELL = new List<ItemName>([

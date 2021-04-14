@@ -23,7 +23,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		if (this.character.s.fingered)
 			return await PromiseExt.delay(250);
 
-		if (await this.defenseAsync())
+		if (await this.defenseAsync() && this.destination == null && this.readyToGo)
 			await this.offenseAsync();
 
 		return;
@@ -67,7 +67,7 @@ export class WarriorScript extends ScriptBase<Warrior> {
 		}
 
 		if (this.character.moving && this.character.canUse("charge"))
-			await this.character.charge();
+			await this.useSkill(() => this.character.charge());
 
 		return true;
 	}

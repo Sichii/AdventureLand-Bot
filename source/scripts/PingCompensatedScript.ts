@@ -74,12 +74,12 @@ export abstract class PingCompensatedScript extends KindBase {
         this.loopAsync(async () => this.monitorCC(), 1000);
     }
 
-    async loopAsync(func: () => Promise<any>, msMinDelay: number, delayStart?: boolean, ignoreSmartMove = false) {
+    async loopAsync(func: () => Promise<any>, msMinDelay: number, delayStart = false, ignoreSmartMove = false) {
         let wrapperFunc = async () => {
             try {
                 if (!this.isConnected)
                     await PromiseExt.delay(5000);
-                else if (this.destination != null && !ignoreSmartMove) 
+                else if (!ignoreSmartMove && this.character.c.town != null) 
                     await PromiseExt.delay(250);
                 else {
                     await func();
@@ -229,7 +229,7 @@ export abstract class PingCompensatedScript extends KindBase {
             if(this.couldBeAttacked) {
                 options.avoidTownWarps = true;
                 //path till we reach our destination, or we're not being attacked
-                await Promise.any<any>([this.character.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !this.couldBeAttacked, 1000 * 10)]);    
+                await Promise.any<any>([this.character.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !this.couldBeAttacked || (this.character.s.town != null), 1000 * 60)]);    
             } else
                 await this.character.smartMove(to, options);
         } finally {
@@ -243,10 +243,6 @@ export abstract class PingCompensatedScript extends KindBase {
         avoidTownWarps?: boolean;
     }): Promise<NodeData | void> {
         await Promise.any<any>([this.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !condition(), 60000)]);
-    }
-
-    dismantle(slot: number) {
-        this.character.socket.emit("dismantle", { num: slot });
     }
 
     locateReservedItem(predicate: (item: ItemInfo) => boolean) {
