@@ -54,10 +54,6 @@ export abstract class PingCompensatedScript extends KindBase {
         return this.character.range;
     }
 
-    get isBeingAttacked() {
-        return this.entities.values.any(entity => entity.target != null && entity.target === this.character.id);
-    }
-
     get couldBeAttacked() {
         return this.entities.values.any(entity => {
             if(entity.target == null && !entity.rage)
@@ -171,22 +167,22 @@ export abstract class PingCompensatedScript extends KindBase {
 
         return Promise.resolve();
     }
-
-    distance(entity: Point | IPosition) {
+    
+    distance(entity: IPosition) {
         return this.location.distance(entity);
     }
 
-    shouldSee(entity: Point | IPosition) {
+    shouldSee(entity: IPosition) {
         return this.distance(entity) < 600;
     }
 
-    withinRange(entity: Point | IPosition, range = this.range) {
+    withinRange(entity: IPosition, range = this.range) {
         let distance = this.distance(entity);
 
         return distance < range;
     }
 
-    withinSkillRange(entity: Point | IPosition, skill: SkillName, safetyCheck = false) {
+    withinSkillRange(entity: IPosition, skill: SkillName, safetyCheck = false) {
         let skillInfo = Game.G.skills[skill];
 
         if (skillInfo == null) {
@@ -211,7 +207,7 @@ export abstract class PingCompensatedScript extends KindBase {
         if (range == null)
             return true;
 
-        return this.distance(entity) < ((safetyCheck && this.settings.safeRangeCheckEnabled) ? range * 1.1 : range);
+        return this.distance(entity) < (safetyCheck ? range + 25 : range);
     }
 
     attackVs(entity: Entity) {
@@ -228,18 +224,18 @@ export abstract class PingCompensatedScript extends KindBase {
     }): Promise<NodeData | void> {
         this.destination = to;
 
-        if (!options)
+        if (options == null)
             options = {};
 
         //safety margin
-        if (options?.getWithin != null)
+        if (options.getWithin != null)
             options.getWithin *= 0.95;
 
         try {
             if(this.couldBeAttacked) {
                 options.avoidTownWarps = true;
                 //path till we reach our destination, or we're not being attacked
-                await Promise.any<any>([this.character.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !this.couldBeAttacked || (this.character.s.town != null), 1000 * 60)]);    
+                await Promise.any<any>([this.character.smartMove(to, options), PromiseExt.pollWithTimeoutAsync(async () => !this.couldBeAttacked, 1000 * 60)]);    
             } else
                 await this.character.smartMove(to, options);
         } finally {

@@ -16,14 +16,14 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     }
 
     get readyToGo(): boolean {
-        if(this.settings.assist != null)
+        if (this.settings.assist != null)
             return this.leader != null && this.leader.readyToGo;
 
-        for(let [, theirMind] of this.hiveMind) {
-            if(theirMind.settings.assist == null || theirMind.settings.assist !== this.character.name)
+        for (let [, theirMind] of this.hiveMind) {
+            if (theirMind.settings.assist == null || theirMind.settings.assist !== this.character.name)
                 continue;
 
-            if(theirMind.distance(this.character) > Math.max(theirMind.range * SETTINGS.RANGE_OFFSET, 200))
+            if (theirMind.distance(this.character) > Math.max(theirMind.range * SETTINGS.RANGE_OFFSET, 200))
                 return false;
         }
 
@@ -40,14 +40,15 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     get nearbyPriest() {
         return this.players
             .values
-            .firstOrDefault(player => player.ctype === "priest" && player.party === this.character.party); 
+            .firstOrDefault(player => player.ctype === "priest" && player.party === this.character.party);
     }
 
     get okToUseMultiTargetSkills() {
-        return this.hiveMind.boss == null 
-            || this.character.target === this.hiveMind.boss.id 
+        return this.hiveMind.boss == null
+            || this.character.target === this.hiveMind.boss.id
             || this.entities
-                .count(([, entity]) => entity.isAttackingPartyMember(this.character)) >= 3;
+                .values
+                .count(entity => entity.isAttackingPartyMember(this.character)) >= 3;
     }
 
     constructor(character: T, hiveMind: HiveMind) {
@@ -64,7 +65,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             this.loopAsync(async () => this.selectTarget(), 1000 / 30);
         }
 
-        if(this.settings.originalGear)
+        if (this.settings.originalGear)
             this.loopAsync(() => this.equipOriginalGear(), 1000 * 5);
 
         this.loopAsync(() => this.mainAsync(), this.settings.mainInterval);
@@ -72,36 +73,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         this.loopAsync(() => this.setBossAsync(), 1000 / 5, false, true);
 
         this.character.socket.on("code_eval", (data: string) => this.commandManager.handleCommand(data));
-        this.character.socket.on("disconnect", () => this.reconnect());
     }
 
     abstract mainAsync(): Promise<void>;
     abstract movementAsync(): Promise<void>;
-
-    async reconnect() {
-        Logger.Error("Disconnected, attempting to reconnect...");
-        await this.character.disconnect();
-
-        let msSinceLastConnect = DateExt.utcNow.subtract(this.lastConnect);
-        let minimumMs = 1000 * 60;
-        if (msSinceLastConnect < minimumMs)
-            await PromiseExt.delay(minimumMs - msSinceLastConnect);
-
-        try {
-            this.lastConnect = DateExt.utcNow;
-            let name = this.character.name;
-            let server = this.character.server;
-            let ctype = this.character.ctype;
-            this.character = <T>await Game.startCharacter(name, server.region, server.name, ctype);
-            this.character.name = name;
-        } catch {
-            await this.reconnect();
-            return;
-        }
-
-        this.character.socket.on("code_eval", (data: string) => this.commandManager.handleCommand(data));
-        this.character.socket.on("disconnect", () => this.reconnect());
-    }
 
     async lootAsync() {
         if (this.character.rip || this.character.chests.size == 0 || this.settings.assist != null)
@@ -136,10 +111,10 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     async equipOriginalGear() {
         let originalGear = this.settings.originalGear!;
 
-        for(let itemName of originalGear) {
+        for (let itemName of originalGear) {
             let item = this.locateReservedItem(item => item != null && item.name === itemName);
 
-            if(item)
+            if (item)
                 await this.character.equip(item.slot);
         }
     }
@@ -162,26 +137,28 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
             this.target = leader.target;
         } else {
-            if (this.target != null) {
+            let target = this.target;
+
+            if (target != null) {
                 let boss = this.hiveMind.boss;
                 let currentTarget = this.entities
                     .values
-                    .firstOrDefault(entity => entity.id === this.target!.id);
+                    .firstOrDefault(entity => entity.id === target!.id);
 
                 //if we can see our target
-                if(currentTarget != null) {
+                if (currentTarget != null) {
                     //if we're targeting the boss
-                    if(boss != null && boss.id === currentTarget.id)
+                    if (boss != null && boss.id === currentTarget.id)
                         return setTarget(currentTarget);
 
-                    //if it wont burn to death, keep attacking it
-                    if(!currentTarget.willBurnToDeath())
-                        return setTarget(currentTarget);
+                    //if it will burn to death, stop attacking it
+                    if (currentTarget.willBurnToDeath())
+                        return setTarget(undefined);
 
-                    return setTarget(undefined);
-                //if the boss isnt null and we're targeting it
-                } else { 
-                    if(boss != null && this.target != null && boss.id === this.target.id && this.shouldSee(boss)) {
+                    return setTarget(currentTarget);
+                    //if the boss isnt null and we're targeting it
+                } else {
+                    if (boss != null && target != null && boss.id === target.id && this.shouldSee(boss)) {
                         //we should be attacking the boss
                         //we should see the boss but we dont
                         //signal that we killed the boss
@@ -192,16 +169,16 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
                     //our target is probably dead
                     return setTarget(undefined);
                 }
-            //if we dont have a target, we should be attacking a boss, and we arent being attacked by something else
-            } else if(this.hiveMind.boss != null && !this.isBeingAttacked)
+                //if we dont have a target, we should be attacking a boss, and we arent being attacked by something else
+            } else if (this.hiveMind.boss != null && this.character.targets === 0)
                 return setTarget(this.hiveMind.boss);
 
             let current: { target: Entity, location: Location, canPath: boolean } | undefined;
             let attackableTypes = SETTINGS.ATTACKABLE_BOSSES.concat(this.settings.attackMTypes!).toList();
             for (let [, entity] of this.entities) {
-                if (entity == null 
-                    || !attackableTypes.contains(entity.type) 
-                    || (entity.hp <= 0) 
+                if (entity == null
+                    || !attackableTypes.contains(entity.type)
+                    || (entity.hp <= 0)
                     || entity.willBurnToDeath())
                     continue;
 
@@ -249,14 +226,14 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
     async setBossAsync() {
         let boss = this.entities.values.firstOrDefault(entity => SETTINGS.ATTACKABLE_BOSSES.contains(entity.type, StringComparer.IgnoreCase));
-        let bossIsNull = this.hiveMind.boss == null;
+        let currentBoss = this.hiveMind.boss;
 
-        if(boss && (bossIsNull || this.hiveMind.boss!.type === boss.type)) {
+        if (boss != null && (currentBoss == null || currentBoss.type === boss.type)) {
             this.hiveMind.boss = boss;
 
-            if(bossIsNull) 
-                for(let [, mind] of this.hiveMind)
-                    await mind.character.stopSmartMove();
+            if (currentBoss == null)
+                for (let theirMind of this.hiveMind.values)
+                    await theirMind.character.stopSmartMove();
         }
     }
 
@@ -279,7 +256,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
         if (bestPoint != null)
             await this.character.move(bestPoint.x, bestPoint.y, true)
-                .then(undefined, () => {})
+                .then(undefined, () => { })
                 .catch(() => { });
         else
             await this.smartMove(location, { getWithin: this.range });
@@ -293,8 +270,14 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         if (leader == null)
             return;
 
-        if (leader.destination != null) {
-            await this.smartMoveWhile(leader.destination, () => leader?.destination != null, { getWithin: this.range });
+        let destination = leader.destination;
+        if (destination != null) {
+            let currentLoc = await this.smartMoveWhile(destination, () => leader?.destination != null && leader.destination === destination, { getWithin: this.range });
+
+            //if we reached the destination early.. we dont want to spam smartmoves... wait till we're ready
+            if(currentLoc != null && this.distance(currentLoc) < this.range)
+                await PromiseExt.pollWithTimeoutAsync(async () => this.readyToGo, 10000);
+
             return;
         }
 
@@ -328,7 +311,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         let target = this.target;
 
         if (target != null) {
-            if(!Pathfinder.canWalkPath(this.location, target))
+            if (!Pathfinder.canWalkPath(this.location, target))
                 return await this.smartMove(target, { getWithin: this.range });
 
             let isBoss = SETTINGS.ATTACKABLE_BOSSES.contains(target.type);
@@ -340,22 +323,22 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             //and we outrange our target
             //and we have a fairly significant range
             let takingBigDamage = this.calculateIncomingDPS(false, false, [target]) > this.calculateIncomingHPS();
-            if((this.settings.kite || takingBigDamage) 
-                && this.character.speed > target.speed 
+            if ((this.settings.kite || takingBigDamage)
+                && this.character.speed > target.speed
                 && (this.range > target.range || takingBigDamage)
                 && (!isBoss || attackingUs))
-                if(await this.circleKiteAsync())
+                if (await this.circleKiteAsync())
                     return;
-                
+
             let maxRange = this.range;
             let isAssisting = this.settings.assist != null;
 
             //if we arent kiting
-            if(!this.settings.kite) {
-                if(!isAssisting && this.distance(target) < this.range)
+            if (!this.settings.kite) {
+                if (!isAssisting && this.distance(target) < this.range)
                     return;
 
-                if(target.target === this.character.id)
+                if (target.target === this.character.id)
                     maxRange = Math.min(maxRange, target.range);
             }
 
@@ -364,11 +347,11 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             //if we dont get a target within a reasonable amount of time
             let hasTarget = await PromiseExt.pollWithTimeoutAsync(async () => this.target != null, 1000);
 
-            if(hasTarget)
+            if (hasTarget)
                 return;
 
             let mapMonsters = Game.G.maps[this.character.map]?.monsters;
-            if(mapMonsters == null)
+            if (mapMonsters == null)
                 return;
 
             //pick a new random spawnpoint for the monster we're after
@@ -378,7 +361,7 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
 
             //no possible spawns on this map, so we're probably not on the right map
             if (possibleSpawns.length == 0)
-                return await this.smartMove(this.settings.attackMTypes!.first(), );
+                return await this.smartMove(this.settings.attackMTypes!.first(),);
 
             let goTo = possibleSpawns
                 .where(spawn => spawn.boundary != null)
@@ -398,19 +381,19 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     async circleKiteAsync() {
         let target = this.target;
 
-        if(target == null)
+        if (target == null)
             return false;
 
         //we want to generally be in range of whatever we target
         //we can do bigger circles if the monster is faster
-        let maxRadius = (Math.max(this.range, 150) / 2) + (target.range/2);
+        let maxRadius = (Math.max(this.range, 150) / 2) + (target.range / 2);
 
         //get the closest spawn bounds of our target monster
         //get the center point, and smallest dimension of those bounds
         //we will use the center for circleCenter and the smallest dimension / 2 as the radius
         let mapMonsters = Game.G.maps[this.character.map]?.monsters;
 
-        if(mapMonsters == null)
+        if (mapMonsters == null)
             return false;
 
         let circle = new List(mapMonsters)
@@ -418,31 +401,31 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
             .select(monster => {
                 let allBoundaries: IEnumerable<[number, number, number, number]>;
 
-                if(monster.boundaries != null)
+                if (monster.boundaries != null)
                     allBoundaries = new List(monster.boundaries)
                         .select(([_, tlX, tlY, brX, brY]) => <[number, number, number, number]>[tlX, tlY, brX, brY]);
-                else if(monster.boundary != null)
+                else if (monster.boundary != null)
                     allBoundaries = new List([monster.boundary]);
                 else
                     return null;
 
                 //get closest set of boundaries for the monster we're targeting
                 return allBoundaries
-                    .select(([tlX, tlY, brX, brY]) => { 
-                        return { 
+                    .select(([tlX, tlY, brX, brY]) => {
+                        return {
                             center: new Point(tlX, tlY).midPoint(new Point(brX, brY)),
                             radius: Math.min(Math.abs(tlX - brX), Math.abs(tlY - brY)) / 2.1
                         };
                     })
-                    .where(set => set.radius > this.range/3)
+                    .where(set => set.radius > this.range / 3)
                     .min(set => set.center.distance(target!));
             })
             .where(set => set != null)
             .min(set => set!.center.distance(target!));
 
-        if(circle == null)
+        if (circle == null)
             return false;
-        
+
         //set a max radius so things stay in range longer
         circle.radius = Math.min(circle.radius, maxRadius);
         let currentAngle = this.point.angularRelationTo(circle.center);
@@ -451,30 +434,30 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         //walk to a point x degrees around the circumference of the circle from us
         let walkToPoint: Point | undefined;
 
-        for(let degree = 0; degree < 360; degree += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL) {
+        for (let degree = 0; degree < 360; degree += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL) {
             walkToAngle += SETTINGS.CIRCULAR_KITE_DEGREE_INTERVAL;
 
-            if(walkToAngle > 180)
+            if (walkToAngle > 180)
                 walkToAngle -= 360;
 
             let tryWalkToPoint = circle.center.offsetByAngle(walkToAngle, circle.radius);
 
-            if(Pathfinder.canWalkPath(this.location, new Location(tryWalkToPoint, this.character.map))) {
+            if (Pathfinder.canWalkPath(this.location, new Location(tryWalkToPoint, this.character.map))) {
                 walkToPoint = tryWalkToPoint;
                 break;
             }
         }
 
-        if(walkToPoint != null) {
+        if (walkToPoint != null) {
             //if we kite out of range, pick a new target
             //this is down here so that we continue circle kiting even if we change target
-            if(this.distance(target) > this.range)
+            if (this.distance(target) > this.range)
                 this.target = undefined;
 
-            let expectedTime = Math.max((this.distance(walkToPoint)/this.character.speed) - this.settings.movementInterval, 0);
+            let expectedTime = Math.max((this.distance(walkToPoint) / this.character.speed) - this.settings.movementInterval, 0);
             let moveTask = this.character.move(walkToPoint.x, walkToPoint.y, true)
-                .then(undefined, () => {})
-                .catch(() => {});
+                .then(undefined, () => { })
+                .catch(() => { });
 
             await PromiseExt.delay(expectedTime * 900);
             return true;
@@ -493,11 +476,11 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     calculateIncomingHPS(nearbyPriest = this.nearbyPriest) {
         let hps = 200;
         //rough calculation, doesnt take into account armor/resist/etc
-        hps += (this.character.attack * this.character.frequency * (this.character.lifesteal/150));
+        hps += (this.character.attack * this.character.frequency * (this.character.lifesteal / 150));
 
-        if(nearbyPriest) {
+        if (nearbyPriest) {
             let priestHps = nearbyPriest.attack * nearbyPriest.frequency;
-            if(nearbyPriest.s.poisoned)
+            if (nearbyPriest.s.poisoned)
                 priestHps *= (1 - Game.G.conditions.poisoned.healm!);
 
             hps += priestHps;
@@ -507,16 +490,16 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
     }
 
     calculateIncomingDPS(ignoreDefensives = false, ignoreStunned = true, entities: Iterable<Entity> = this.entities.values
-        .where(entity => entity.target != null && entity.target === this.character.id), ) {
+        .where(entity => entity.target != null && entity.target === this.character.id),) {
         let dps = 0;
 
-        if(this.character.s.burned) {
+        if (this.character.s.burned) {
             let interval = Game.G.conditions.burned.interval!;
             let ticksPerSecond = 1000 / interval;
             let remainingTicks = Math.floor(this.character.s.burned.ms / 1000 / ticksPerSecond);
             let damagePerTick = this.character.s.burned.intensity / 5;
 
-            if(remainingTicks > ticksPerSecond)
+            if (remainingTicks > ticksPerSecond)
                 remainingTicks = ticksPerSecond;
 
             dps += remainingTicks * damagePerTick;
@@ -525,22 +508,22 @@ export abstract class ScriptBase<T extends PingCompensatedCharacter> extends Pin
         let armor = this.character.armor;
         let resistance = this.character.resistance;
 
-        if(ignoreDefensives) {
-            if(this.character.s.hardshell)
+        if (ignoreDefensives) {
+            if (this.character.s.hardshell)
                 armor -= Game.G.conditions.hardshell.armor!;
 
-            if(this.character.s.fingered)
+            if (this.character.s.fingered)
                 resistance -= Game.G.conditions.fingered.resistance!;
         }
 
-        for(let entity of entities) {
+        for (let entity of entities) {
             //ignore things that will be stunned for longer than a second
-            if(ignoreStunned && entity.s.stunned != null && entity.s.stunned.ms > 1000)
-                continue; 
+            if (ignoreStunned && entity.s.stunned != null && entity.s.stunned.ms > 1000)
+                continue;
 
             let entityDPS = entity.attack * entity.frequency;
 
-            switch(entity.damage_type) {
+            switch (entity.damage_type) {
                 case "physical":
                     dps += (entityDPS * Utility.calculateDamageMultiplier(armor - (entity.apiercing ?? 0)));
                     break;

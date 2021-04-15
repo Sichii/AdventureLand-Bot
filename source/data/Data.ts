@@ -1,19 +1,34 @@
-import { DateExt, Dictionary, Game, IQuestData, List, MapName, MonsterName, NodeData, NPCName, Pathfinder, SETTINGS } from "../internal";
+import { DateExt, Dictionary, Game, IPosition, IQuestData, ItemName, List, MapName, MonsterName, NodeData, NPCName, Pathfinder, SETTINGS } from "../internal";
 
+export type QuestName = "cx" | "mcollector" | "witch" | ItemName
+/*
+    | "cx"
+    | "gemfragment"
+    | "glitch"
+    | "leather"
+    | "lostearring"
+    | "mcollector"
+    | "seashell"
+    | "witch"
+    */
 export class Data {
-    static quests: Dictionary<string, IQuestData>;
+    static quests: {
+        [T in QuestName]: IPosition & {
+            id: NPCName
+        }
+    }
     static bossHunt: Dictionary<MonsterName, DateExt>;
 
 
     static populate() {
-        this.quests = new Dictionary();
+        this.quests = <any>{};
         this.bossHunt = new Dictionary();
 
         for(let npc of Object.values(Game.G.npcs)) {
             if(npc.quest) {
                 let npcLoc = this.locateNPCs(npc.id)?.[0];
                 if(npcLoc)
-                    this.quests.addOrSet(npc.quest, { x: npcLoc.x, y: npcLoc.y, map: npcLoc.map, in: npcLoc.map, id: npc.id });
+                    this.quests[npc.quest] = { x: npcLoc.x, y: npcLoc.y, map: npcLoc.map, in: npcLoc.map, id: npc.id };
             }
         }
     }

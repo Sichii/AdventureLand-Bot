@@ -1,6 +1,4 @@
-import { IEnumerable } from "../enumerable/IEnumerable";
-import { IBankedItem } from "../interfaces/IBankedItem";
-import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ItemType, ServerIdentifier, ServerRegion, Dictionary, CONSTANTS, BankPackName, Data, Utility, StringComparer, MonsterName, IPosition, IIndexedItem, ICompoundableSet, DateExt } from "../internal";
+import { HiveMind, Merchant, ScriptBase, Constants, PromiseExt, Deferred, SETTINGS, List, ItemInfo, Game, ItemName, ItemType, ServerIdentifier, ServerRegion, Dictionary, CONSTANTS, BankPackName, Data, Utility, StringComparer, MonsterName, IPosition, IIndexedItem, ICompoundableSet, DateExt, QuestName, IBankedItem, IEnumerable } from "../internal";
 
 export class MerchantScript extends ScriptBase<Merchant> {
     wasMoving: boolean;
@@ -551,8 +549,12 @@ export class MerchantScript extends ScriptBase<Merchant> {
 
                 let gItem = Game.G.items[itemInfo.name];
                 if (gItem.e != null && itemInfo.q != null && itemInfo.q >= gItem.e) {
-                    let destination = Data.quests.getValue(gItem.quest)?.id ?? "exchange";
-                    await this.smartMove(destination, { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 })
+                    let destination;
+                    
+                    if(gItem.quest)
+                        destination = Data.quests[<QuestName>gItem.quest];
+
+                    await this.smartMove(destination ?? "exchange", { getWithin: Constants.NPC_INTERACTION_DISTANCE * 0.75 })
                     await this.character.exchange(+index);
                 }
             }

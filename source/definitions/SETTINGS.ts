@@ -28,7 +28,7 @@ export class SETTINGS {
                     elixir: "bunnyelixir",
                     mainInterval: 1000 / 30,
                     movementInterval: 1000 / 10,
-                    safeRangeCheckEnabled: false,
+                    safeRangeCheckEnabled: true,
                     kite: false,
                     attackMTypes: new List<MonsterName>([
                         "wolf"
@@ -114,7 +114,6 @@ export class SETTINGS {
 
     //#region Items
     static ITEMS_TO_COMPOUND = new List<ItemName>([
-        //"ctristone", "vitring"
         "wbook0",
         //t1 earrings 
         "intearring", "dexearring", "strearring", "vitearring",
@@ -122,6 +121,8 @@ export class SETTINGS {
         "intbelt", "dexbelt", "strbelt",
         //t2 amulets
         "t2intamulet", "t2dexamulet", "t2stramulet",
+        //rings
+        "vitring", "ctristone",
     ]);
 
     static ITEMS_TO_UPGRADE = new List<ItemName>([
@@ -142,7 +143,7 @@ export class SETTINGS {
     ]);
 
     static ITEMS_TO_BUY_FROM_MERCHANT = new List<ItemName>([
-        "bow"
+        "blade"
     ]);
 
     static ITEMS_TO_BUY_FROM_PONTY = new List<ItemName>([
@@ -164,7 +165,7 @@ export class SETTINGS {
         //t1 armor
         "wcap", "wattire", "wgloves", "wbreeches", "wshoes",
         //t1 weapons
-        "blade", "staff",
+        "staff", //"blade", "bow",
         //t1 amulets
         "intamulet", "dexamulet", "stramulet",
 

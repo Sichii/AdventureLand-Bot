@@ -21,7 +21,7 @@ export class Location extends KindBase {
         if(other == null)
             throw new Error("Other is not defined.");
 
-        if("map" in other && other.map != null && this.map !== other.map)
+        if(("map" in other) && other.map != null && this.map != null && this.map !== other.map)
             return Number.MAX_SAFE_INTEGER;
 
         return this.point.distance(other);
